@@ -8,4 +8,5 @@
 #root{
   min-height: 100vh;
   display: flex;
+  background-image: url('./pattern.webp');
 }
