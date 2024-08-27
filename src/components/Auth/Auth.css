@@ -15,6 +15,7 @@
     width: 100%;
     max-width: 400px;
     text-align: center;
+    justify-content: center;
 }
 
 .auth-form h2 {
@@ -62,7 +63,7 @@
     text-decoration: underline;
 }
 
-/* Media Queries for responsive design */
+/* Media Queries for responsive design
 @media (max-width: 768px) {
     .auth-form {
         padding: 1.5rem;
@@ -84,4 +85,4 @@
         font-size: 0.875rem;
         padding: 0.5rem;
     }
-}
+} */

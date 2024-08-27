@@ -90,10 +90,12 @@
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    background-color: #f0f4f9;
+    background-color: #e2e6eb;
     padding: 10px 20px;
     border-radius: 50px;
 }
+
+
 
 .search-box img{
     width: 24px;
@@ -116,7 +118,7 @@
 }
 
 .main .bottom-info{
-    font-size: 13px;
+    font-size: 15px;
     margin: 15px auto;
     text-align: center;
     font-weight: 300;

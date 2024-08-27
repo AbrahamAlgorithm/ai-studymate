@@ -23,7 +23,7 @@ const Main = () => {
             </div>
             <div className="cards">
                 <div className="card">
-                    <p>Suggest beautiful places to see on an upcoming road trip</p>
+                    <p>A driver travelling at a speed of 115km/h received a text message on his mobile phone. How far is he in km, 20s later from when he received the text?</p>
                     <img src={assets.compass_icon} alt="" />
                 </div>
                 <div className="card">
@@ -31,7 +31,7 @@ const Main = () => {
                     <img src={assets.bulb_icon} alt="" />
                 </div>
                 <div className="card">
-                    <p>Brainstorm team bonding activities for our work retreat</p>
+                    <p>Brainstorm some Clapyron theorem of three moment questions with me</p>
                     <img src={assets.message_icon} alt="" />
                 </div>
                 <div className="card">
