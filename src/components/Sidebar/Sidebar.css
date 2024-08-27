@@ -39,11 +39,12 @@
 .sidebar .recent{
     display: flex;
     flex-direction: column;
+    animation: fadeIn 1.5s;
 }
 
 .sidebar .recent-title{
     margin-top: 30px;
-    margin-button: 20px;
+    margin-bottom: 20px;
 }
 
 .sidebar .recent-entry{
@@ -69,4 +70,10 @@
 .sidebar .buttom-item{
     padding-right: 10px;
     cursor: pointer;
+}
+
+@media (max-width:600px) {
+    .sidebar{
+        display: none;
+    }
 }
