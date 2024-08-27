@@ -31,7 +31,7 @@ const Main = () => {
                     <img src={assets.bulb_icon} alt="" />
                 </div>
                 <div className="card">
-                    <p>Brainstorm some Clapyron theorem of three moment questions with me</p>
+                    <p>Brainstorm some questions on Clapyron theorem of three moment equation with me</p>
                     <img src={assets.message_icon} alt="" />
                 </div>
                 <div className="card">
