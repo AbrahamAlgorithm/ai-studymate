@@ -27,10 +27,8 @@ AI StudyMate aims to make learning more accessible by using AI and machine learn
 ## Technologies Used
 - **Backend:** Python (Django/Flask)
 - **Frontend:** React.js or Angular
-- **AI/ML Models:** TensorFlow, PyTorch
-- **OCR Technology:** Tesseract, Google Vision API
-- **Image Processing:** OpenCV, PIL (Python Imaging Library)
-- **Database:** PostgreSQL, MongoDB
+- **AI/ML Models:** Gemini pro vision
+- **Database:** MongoDB
 
 ## Installation
 To run AI StudyMate locally, follow these steps:
