@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AI StudyMate
 
 **AI StudyMate** is an AI-powered web application designed to provide personalized tutoring assistance to students. The platform allows users to upload images of academic questions, and it returns detailed, step-by-step solutions, focusing on subjects like structural mechanics, strength of materials, physics, and mathematics.
@@ -86,5 +87,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 For questions or feedback, please contact:
 - **Name:** Abraham Folorunso
 - **Email:** abrahamfolorunso6@gmail.com
-
-
