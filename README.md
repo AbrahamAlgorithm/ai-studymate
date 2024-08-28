@@ -17,6 +17,15 @@
 ## Project Overview
 AI StudyMate aims to make learning more accessible by using AI to analyze and solve academic problems through text input. The application provides an interactive learning experience, offering detailed explanations to help students grasp complex concepts. It also retains memory of past interactions to provide context-aware responses.
 
+## Chat Interface
+
+Here’s a snapshot of the AI StudyMate chat interface:
+
+<img src="SS.png" alt="AI StudyMate Chat Interface" width="600">
+<br>
+<img src="Screenshot 2024-08-27 235414.png" alt="AI StudyMate Chat Interface" width="600">
+
+
 ## Features
 - **Text-Based Input:** Users can ask academic or general questions through a text-based interface.
 - **Memory Retention:** AI StudyMate remembers previous conversations to offer better context and personalized responses.
