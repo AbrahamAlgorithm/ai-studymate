@@ -41,7 +41,7 @@ const Signin = () => {
         event.preventDefault();
         try {
             await signInWithEmailAndPassword(auth, email, password);  // Sign in with auth
-            navigate('/');
+            navigate('/chat');
         } catch (error) {
             let errorMessage = 'An error occurred. Please try again.';
             switch (error.code) {
