@@ -82,7 +82,7 @@ const Main = () => {
                     </div>
                 </div>
                 <p className="bottom-info">
-                    Built with love by Abraham Algorithm
+                    Built with ❤️ by Abraham Algorithm
                 </p>
             </div>
         </div>
