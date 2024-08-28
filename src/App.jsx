@@ -5,7 +5,6 @@ import Main from './components/Main/Main'
 import Signin from './components/Auth/Signin'
 import Signup from './components/Auth/Signup'
 
-
 const Home = () => (
   <>
     <Sidebar />
@@ -17,9 +16,10 @@ const App = () => {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
+        {/* Set the signup page as the default route */}
+        <Route path="/" element={<Signup />} />
         <Route path="/signin" element={<Signin />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/chat" element={<Home />} />
       </Routes>
     </Router>
   )
