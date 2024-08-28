@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Box, Button, Container, Typography, TextField, CssBaseline, Stack } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { signInWithEmailAndPassword } from 'firebase/auth';  // Import directly from Firebase
+import { auth } from '../../firebase';
 
 const themePrimary = createTheme({
     typography: {
@@ -35,17 +37,27 @@ const Signin = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
-    const handleSignIn = (event) => {
+    const handleSignIn = async (event) => {
         event.preventDefault();
-
-        // Simulate sign-in logic (replace with real logic later)
-        const existingUser = 'test@example.com';
-        const correctPassword = 'password123';
-
-        if (email === existingUser && password === correctPassword) {
-            navigate('/');  // Redirect to home page after successful sign-in
-        } else {
-            setError('Incorrect email or password.');
+        try {
+            await signInWithEmailAndPassword(auth, email, password);  // Sign in with auth
+            navigate('/');
+        } catch (error) {
+            let errorMessage = 'An error occurred. Please try again.';
+            switch (error.code) {
+                case 'auth/invalid-email':
+                    errorMessage = 'Invalid email address.';
+                    break;
+                case 'auth/wrong-password':
+                    errorMessage = 'Incorrect password.';
+                    break;
+                case 'auth/user-not-found':
+                    errorMessage = 'No user found with this email.';
+                    break;
+                default:
+                    errorMessage = 'Failed to sign in. Please check your credentials and try again.';
+            }
+            setError(errorMessage);
         }
     };
 

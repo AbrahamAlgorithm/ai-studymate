@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { useState } from "react";
+import React, { useState } from "react";
 import run from "../config/gemini";
 
 export const Context = createContext();
@@ -30,18 +30,22 @@ const ContextProvider = (props) => {
         setResultData("")
         setLoading(true)
         setShowResult(true)
+
+        // Build context from previous prompts
+        const context = prevPrompts.map(item => item.prompt + ": " + item.response).join("\n");
+
         let response;
         if (prompt !== undefined) {
-            response = await run(prompt);
-            setRecentPrompt(prompt)
-        }
-        else
-        {
-            setPrevPrompts(prev=>[...prev,input])
-            setRecentPrompt(input)
-            response = await run(input)
+            setPrevPrompts(prev => [...prev, { prompt, response: "" }]);
+            response = await run(context + "\n" + prompt);  // Include context in the request
+            setRecentPrompt(prompt);
+        } else {
+            setPrevPrompts(prev => [...prev, { prompt: input, response: "" }]);
+            setRecentPrompt(input);
+            response = await run(context + "\n" + input);  // Include context in the request
         }
         
+        // Same processing for response as before
         let responseArray = response.split("**");
         let newResponse="" ;
         for(let i = 0; i < responseArray.length; i++)
@@ -58,8 +62,16 @@ const ContextProvider = (props) => {
         for(let i=0; i<newResponseArray.length;i++)
         {
             const nextWord = newResponseArray[i];
-            delayPara(i,nextWord+" ")
+            delayPara(i,nextWord+" ");
         }
+
+        setPrevPrompts(prev => {
+            const updatedPrompts = [...prev];
+            updatedPrompts[updatedPrompts.length - 1].response = newResponse;
+            return updatedPrompts;
+        });
+
+
         setLoading(false)
         setInput("")
     }

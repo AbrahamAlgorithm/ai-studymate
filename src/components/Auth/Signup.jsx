@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Box, Button, Container, Typography, TextField, CssBaseline, Stack, Snackbar, Alert } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { createUserWithEmailAndPassword } from 'firebase/auth'; 
+import { auth } from '../../firebase';
 
 const themePrimary = createTheme({
     typography: {
@@ -22,6 +24,7 @@ const themePrimary = createTheme({
         text: {
             primary: '#ffffff', 
             secondary: '#cccccc',
+            other: 'black',
         },
         myblue: {
             main: '#00fffb',
@@ -29,31 +32,41 @@ const themePrimary = createTheme({
     },
 });
 
+
 const Signup = () => {
-    const navigate = useNavigate();
+    const navigate = useNavigate(); // React Router's useNavigate
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [openSnackbar, setOpenSnackbar] = useState(false);
 
-    const handleSignUp = (event) => {
+    const handleSignUp = async (event) => {
         event.preventDefault();
-
         if (password.length <= 5) {
             setError('Password must be at least 6 characters long.');
             return;
         }
 
-        // Simulate account creation (replace with real logic later)
-        const existingUser = 'test@example.com';
-
-        if (email === existingUser) {
-            setError('An account already exists with this email address.');
-        } else {
-            setOpenSnackbar(true);  // Show success message
-            setTimeout(() => {
-                navigate('/signin');  // Redirect to sign-in page after showing success message
-            }, 2000);
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            alert('Account created! Please sign in.');
+            navigate('/signin'); // Redirect to sign-in page
+        } catch (error) {
+            let errorMessage = 'An error occurred. Please try again.';
+            switch (error.code) {
+                case 'auth/invalid-email':
+                    errorMessage = 'Invalid email address.';
+                    break;
+                case 'auth/weak-password':
+                    errorMessage = 'Password is too weak. Please choose a stronger password.';
+                    break;
+                case 'auth/email-already-in-use':
+                    errorMessage = 'An account already exists with this email address.';
+                    break;
+                default:
+                    errorMessage = 'Failed to sign up. Please check your details and try again.';
+            }
+            setError(errorMessage);
         }
     };
 

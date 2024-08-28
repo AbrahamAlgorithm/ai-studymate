@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import React, { useContext } from 'react'
 import './Main.css'
 import { assets } from '../../assets/assets'
 import { Context } from '../../context/Context'
@@ -23,7 +23,7 @@ const Main = () => {
             </div>
             <div className="cards">
                 <div className="card">
-                    <p>A driver travelling at a speed of 115km/h received a text message on his mobile phone. How far is he in km, 20s later from when he received the text?</p>
+                    <p>Explain Superconductors</p>
                     <img src={assets.compass_icon} alt="" />
                 </div>
                 <div className="card">
@@ -64,7 +64,17 @@ const Main = () => {
 
             <div className="main-bottom">\
                 <div className="search-box">
-                    <input onChange={(e)=>setInput(e.target.value)} value={input} type="text" placeholder="Enter a prompt here" />
+                    <input 
+                        onChange={(e)=>setInput(e.target.value)}
+                        value={input}
+                        type="text"
+                        placeholder="Enter a prompt here"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && input) {
+                                onSent(); // Trigger message send
+                            }
+                        }}
+                    />
                     <div>
                         <img src={assets.gallery_icon} alt="" />
                         <img src={assets.mic_icon} alt="" />
