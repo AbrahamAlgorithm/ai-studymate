@@ -22,7 +22,7 @@ AI StudyMate aims to make learning more accessible by using AI to analyze and so
 Here’s a snapshot of the AI StudyMate chat interface:
 
 <img src="SS.png" alt="AI StudyMate Chat Interface" width="600">
-<br>
+<br> 
 <img src="Screenshot 2024-08-27 235414.png" alt="AI StudyMate Chat Interface" width="600">
 
 
