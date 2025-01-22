@@ -10,11 +10,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@emotion/react": "^11.13.3",
-    "@emotion/styled": "^11.13.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@fontsource/inter": "^5.1.1",
     "@google/generative-ai": "^0.17.1",
+    "@mui/lab": "^6.0.0-beta.24",
     "@mui/material": "^6.0.0",
     "firebase": "^10.13.0",
+    "framer-motion": "^12.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.26.1"
