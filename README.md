@@ -46,7 +46,7 @@ To run AI StudyMate locally, follow these steps:
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/yourusername/aistudymate.git
+    git clone https://github.com/AbrahamAlgorithm/aistudymate.git
     cd aistudymate
     ```
 
