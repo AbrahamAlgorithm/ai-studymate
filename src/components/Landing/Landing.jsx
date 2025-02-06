@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import './Landing.css'
+import { TypeAnimation } from 'react-type-animation';
+import Footer from './sections/Footer';
 
 const NavLink = ({ to, children, isActive, onClick }) => (
   <motion.div
@@ -49,6 +51,29 @@ const Landing = () => {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  const headlines = [
+    "Master Complex Subjects with AI",
+    "Learn Faster with AI Assistance", 
+    "Understand Better with AI Support"
+  ];
+
+  const [currentHeadline, setCurrentHeadline] = useState(0);
+  const [isTyping, setIsTyping] = useState(true);
+
+  useEffect(() => {
+    const typingTimer = setTimeout(() => {
+      if (currentHeadline < headlines.length - 1) {
+        setIsTyping(false);
+        setTimeout(() => {
+          setCurrentHeadline(prev => prev + 1);
+          setIsTyping(true);
+        }, 500);
+      }
+    }, 3000);
+
+    return () => clearTimeout(typingTimer);
+  }, [currentHeadline]);
 
   return (
     <div className="landing-container">
@@ -110,80 +135,130 @@ const Landing = () => {
       <main>
         <section id="home" className="hero-section">
           <div className="hero-background">
-            <div className="gradient-overlay"></div>
-            <div className="animated-grid"></div>
-          </div>
-
-          <motion.div 
-            className="hero-content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1 }}
-          >
-            <motion.h1 
-              className="hero-title"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              Transform Your Learning Experience
-            </motion.h1>
-
-            <motion.p 
-              className="hero-subtitle"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              Harness the power of AI to enhance your study sessions
-            </motion.p>
-
+            <motion.div className="mesh-gradient"></motion.div>
+            <div className="grid-overlay"></div>
             <motion.div 
-              className="feature-highlights"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.6 }}
+              className="floating-shapes"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1 }}
             >
-              {['Smart Learning', 'Real-time AI', 'Personalized Path'].map((feature, index) => (
-                <motion.div 
-                  key={feature}
-                  className="highlight-item"
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <span className="highlight-icon">✨</span>
-                  {feature}
-                </motion.div>
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="shape"
+                  animate={{
+                    y: [0, -20, 0],
+                    rotate: [0, 360],
+                    scale: [1, 1.1, 1]
+                  }}
+                  transition={{
+                    duration: 8,
+                    delay: i * 0.2,
+                    repeat: Infinity,
+                    ease: "linear"
+                  }}
+                />
               ))}
             </motion.div>
+          </div>
 
-            <motion.div
-              className="cta-container"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.8 }}
+          <div className="hero-content-wrapper">
+            <motion.div 
+              className="hero-content"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
             >
-              <Link to="/signup">
-                <motion.button 
-                  className="cta-button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  Get Started
-                  <span className="arrow">→</span>
-                </motion.button>
-              </Link>
-            </motion.div>
-          </motion.div>
+              <motion.div 
+                className="hero-badge"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <span>✨ AI-Powered Learning</span>
+              </motion.div>
 
-          <motion.div 
-            className="scroll-indicator"
-            animate={{ y: [0, 10, 0] }}
-            transition={{ repeat: Infinity, duration: 1.5 }}
-          >
-            <span>Scroll to explore</span>
-            <div className="scroll-arrow">↓</div>
-          </motion.div>
+              <h1 className="hero-title">
+                <motion.div
+                  key={currentHeadline}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <motion.span
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                  >
+                    {isTyping && (
+                    <TypeAnimation
+                      sequence={[
+                        "Master Complex Subjects with AI", // Type in
+                        2000, // Wait 2s
+                        "", // Delete
+                        100, // Wait 0.1s
+                        "Learn Faster with AI Assistance",
+                        2000,
+                        "",
+                        100, 
+                        "Understand Better with AI Support",
+                        2000,
+                        "",
+                        100
+                      ]}
+                      wrapper="span"
+                      cursor={true}
+                      repeat={Infinity}
+                      speed={50}
+                      deletionSpeed={50}
+                      className="typed-text"
+                    />
+                    )}
+                  </motion.span>
+                </motion.div>
+              </h1>
+
+              <motion.p 
+                className="hero-subtitle"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+              >
+                Your intelligent study companion that adapts to your learning style
+              </motion.p>
+
+              <motion.div 
+                className="hero-cta"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1 }}
+              >
+                {/* <Link to="/signup">
+                  <motion.button 
+                    className="cta-button"
+                    whileHover={{ 
+                      scale: 1.02,
+                      boxShadow: "0 8px 30px rgba(0,198,255,0.3)"
+                    }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <span className="cta-text">Start Learning Now</span>
+                    <motion.span 
+                      className="cta-arrow"
+                      animate={{ x: [0, 5, 0] }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    >
+                      →
+                    </motion.span>
+                  </motion.button>
+                </Link> */}
+              </motion.div>
+            </motion.div>
+          </div>
         </section>
 
         <section id="about" className="section">
@@ -202,14 +277,7 @@ const Landing = () => {
         </section>
       </main>
 
-      <motion.footer 
-        className="footer"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-      >
-        <p>&copy; {new Date().getFullYear()} AI StudyMate. All rights reserved.</p>
-      </motion.footer>
+      <Footer />
     </div>
   )
 }
