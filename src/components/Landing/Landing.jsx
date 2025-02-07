@@ -3,7 +3,196 @@ import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import './Landing.css'
 import { TypeAnimation } from 'react-type-animation';
-import Footer from './sections/Footer';
+import Footer from './sections/Footer'
+
+const ProcessFlow = () => (
+  <motion.div 
+    className="process-flow"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    transition={{ duration: 0.8 }}
+  >
+    <div className="process-container">
+      {/* Question Card */}
+      <motion.div 
+        className="process-card question"
+        animate={{ 
+          rotate: [-6, -4, -6],
+          y: [0, -5, 0]
+        }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+        whileHover={{ scale: 1.05 }}
+      >
+        <div className="card-content">
+          <svg className="icon pulse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+            <path d="M12 17h.01"/>
+          </svg>
+          <div className="card-label">Ask Question</div>
+        </div>
+        <motion.div 
+          className="glow"
+          animate={{
+            opacity: [0.5, 0.8, 0.5],
+            scale: [1, 1.2, 1]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+      </motion.div>
+
+      <div className="connection-line">
+        <motion.div 
+          className="line-progress"
+          animate={{ scaleX: [0, 1] }}
+          transition={{ duration: 1.5, delay: 0.5 }}
+        >
+          <motion.div 
+            className="moving-dot"
+            animate={{
+              x: [0, "100%"],
+              opacity: [0, 1, 0]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+          />
+        </motion.div>
+        <motion.div 
+          className="progress-label"
+          animate={{
+            scale: [1, 1.05, 1],
+            opacity: [0.8, 1, 0.8]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity
+          }}
+        >
+          AI Processing
+        </motion.div>
+      </div>
+
+      {/* Brain/AI Card */}
+      <motion.div 
+        className="process-card brain"
+        animate={{ 
+          scale: [1, 1.02, 1],
+          rotate: [0, 2, 0]
+        }}
+        transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+        whileHover={{ scale: 1.05 }}
+      >
+        <div className="card-content">
+          <svg className="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 8V4H8"/>
+            <rect width="16" height="12" x="4" y="8" rx="2"/>
+            <path d="M2 14h2"/>
+            <path d="M20 14h2"/>
+          </svg>
+          <div className="card-label">AI Analysis</div>
+          <motion.div 
+            className="ripple"
+            animate={{
+              scale: [1, 1.5],
+              opacity: [0.5, 0]
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+              ease: "easeOut"
+            }}
+          />
+        </div>
+      </motion.div>
+
+      <div className="connection-line">
+        <motion.div 
+          className="line-progress gradient"
+          animate={{ scaleX: [0, 1] }}
+          transition={{ duration: 1.5, delay: 1 }}
+        >
+          <motion.div 
+            className="moving-dot"
+            animate={{
+              x: [0, "100%"],
+              opacity: [0, 1, 0]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+          />
+        </motion.div>
+        <motion.div 
+          className="progress-label"
+          animate={{
+            scale: [1, 1.05, 1]
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity
+          }}
+        >
+          Personalized
+        </motion.div>
+      </div>
+
+      {/* Solution Card */}
+      <motion.div 
+        className="process-card solution"
+        animate={{ 
+          y: [0, -8, 0],
+          rotate: [0, -2, 0]
+        }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+        whileHover={{ scale: 1.05 }}
+      >
+        <div className="card-content">
+          <svg className="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+          <div className="card-label">Learn & Understand</div>
+        </div>
+        <motion.div 
+          className="sparkles"
+          animate={{
+            rotate: [0, 360],
+            scale: [0.8, 1, 0.8]
+          }}
+          transition={{
+            duration: 3,
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+      </motion.div>
+    </div>
+  </motion.div>
+);
+
+// Add to Landing component after hero section;
 
 const NavLink = ({ to, children, isActive, onClick }) => (
   <motion.div
@@ -226,6 +415,8 @@ const Landing = () => {
               >
                 Your intelligent study companion that adapts to your learning style
               </motion.p>
+
+              <ProcessFlow />
 
               <motion.div 
                 className="hero-cta"
