@@ -12,6 +12,8 @@
 
 .landing-page {
   position: relative;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   padding: 0;
   background: var(--landing-bg);
@@ -22,6 +24,7 @@
 }
 
 .landing-page main {
+  flex: 1;
   padding-top: 5.5rem;
   padding-bottom: 4rem;
 }
@@ -254,14 +257,6 @@
   font-weight: 500;
 }
 
-.feature-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-  padding: 0 1.5rem;
-}
-
 .hero-showcase-wrap {
   position: relative;
   z-index: 2;
@@ -296,205 +291,22 @@
   object-position: left top;
 }
 
-.feature-card {
-  border-radius: 1.2rem;
-  border: 1px solid var(--landing-border);
-  background: #171717;
-  padding: 1.1rem;
-  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.28);
-}
-
-.feature-card h3 {
-  margin-bottom: 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
-.feature-card p {
-  color: var(--landing-muted);
-  line-height: 1.48;
-}
-
-.workflow-strip {
-  max-width: 72rem;
-  margin-left: auto;
-  margin-right: auto;
-  border-radius: 1rem;
-  padding: 0.9rem 1.1rem;
-  border: 1px solid var(--landing-border);
-  background: #171717;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.55rem;
-  font-weight: 500;
-  color: var(--landing-text);
-}
-
-.dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #fafafa;
-}
-
-.philosophy-section {
-  max-width: 72rem;
-  margin: 2.5rem auto 0;
-  padding: 2rem 1.5rem;
-  border: 1px solid var(--landing-border);
-  border-radius: 1.4rem;
-  background: #131313;
-}
-
-.section-label {
-  color: var(--landing-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  font-size: 0.8rem;
-}
-
-.philosophy-section h2 {
-  margin-top: 0.55rem;
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
-}
-
-.philosophy-lead {
-  margin-top: 0.9rem;
-  color: var(--landing-muted);
-  line-height: 1.6;
-  max-width: 760px;
-}
-
-.philosophy-shell {
-  margin-top: 1.8rem;
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 1rem;
-}
-
-.philosophy-orbit {
+.landing-footer {
   position: relative;
-  min-height: 320px;
-  border: 1px solid var(--landing-border);
-  border-radius: 1rem;
-  background: #101010;
-  overflow: hidden;
+  z-index: 2;
+  margin-top: auto;
+  padding: 2rem 1.5rem;
 }
 
-.orbit-core {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 110px;
-  height: 110px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  border: 1px solid rgba(250, 250, 250, 0.45);
-  background: #181818;
-  font-size: 0.88rem;
-}
-
-.orbit-node {
-  position: absolute;
-  border-radius: 999px;
-  border: 1px solid rgba(250, 250, 250, 0.35);
-  background: #191919;
-  color: var(--landing-text);
-  font-size: 0.82rem;
-  padding: 0.42rem 0.7rem;
-}
-
-.orbit-node-top {
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.orbit-node-right {
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.orbit-node-bottom {
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.orbit-node-left {
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.philosophy-tabs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.8rem;
-}
-
-.philosophy-tab {
-  border: 1px solid var(--landing-border);
-  border-radius: 0.85rem;
-  background: #171717;
-  padding: 0.95rem;
-}
-
-.philosophy-tab h3 {
-  margin-bottom: 0.45rem;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.philosophy-tab p {
-  color: var(--landing-muted);
-  font-size: 0.96rem;
-  line-height: 1.48;
-}
-
-.final-cta {
+.landing-footer-inner {
   max-width: 72rem;
-  margin: 1.2rem auto 0;
-  padding: 1.8rem 1.5rem;
-  text-align: center;
-  border-radius: 1.2rem;
-  border: 1px solid var(--landing-border);
-  background: #141414;
-}
-
-.final-cta h2 {
-  font-size: clamp(1.5rem, 3.8vw, 2.1rem);
-  margin-bottom: 0.6rem;
-}
-
-.final-cta p {
-  color: var(--landing-muted);
-  max-width: 740px;
   margin: 0 auto;
-}
-
-.final-cta .hero-cta {
-  margin-top: 1.2rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(250, 250, 250, 0.78);
 }
 
 @media (max-width: 860px) {
-  .feature-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .philosophy-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .philosophy-orbit {
-    min-height: 270px;
-  }
-
   .hero-showcase-wrap {
     margin-top: 2.8rem;
     padding: 0 0.75rem;
@@ -531,6 +343,14 @@
     font-size: 0.9rem;
   }
 
+  .hero-showcase-wrap {
+    margin-top: 2.2rem;
+    padding: 0 1rem;
+  }
+
+  .hero-showcase-bg {
+    padding: 2.4rem 0 2.4rem 1rem;
+  }
   .hero-cta {
     flex-direction: column;
   }
@@ -540,17 +360,8 @@
     text-align: center;
   }
 
-  .hero-showcase-wrap {
-    margin-top: 2.2rem;
-    padding: 0 1rem;
-  }
-
-  .hero-showcase-bg {
-    padding: 2.4rem 0 2.4rem 1rem;
-  }
-
-  .philosophy-tabs {
-    grid-template-columns: 1fr;
+  .landing-footer {
+    padding: 1.75rem 1rem;
   }
 }
 
