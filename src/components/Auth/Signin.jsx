@@ -95,7 +95,9 @@ const styles = {
 
 const authTheme = createTheme({
   typography: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '"Manrope", "Manrope Fallback", system-ui, sans-serif',
+    fontWeightRegular: 400,
+    fontWeightMedium: 500,
   },
   palette: {
     mode: 'dark',

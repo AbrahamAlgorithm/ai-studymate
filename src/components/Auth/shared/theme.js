@@ -2,7 +2,9 @@ import { createTheme } from '@mui/material/styles';
 
 export const authTheme = createTheme({
   typography: {
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: '"Manrope", "Manrope Fallback", system-ui, sans-serif',
+    fontWeightRegular: 400,
+    fontWeightMedium: 500,
     h4: {
       fontWeight: 500,
       color: '#c4c7c5'
@@ -55,7 +57,7 @@ export const authTheme = createTheme({
         root: {
           borderRadius: '8px',
           textTransform: 'none',
-          fontWeight: 600,
+          fontWeight: 500,
           transition: 'all 0.2s ease-in-out',
           '&:hover': {
             transform: 'translateY(-2px)',

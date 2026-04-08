@@ -1,474 +1,219 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import './Landing.css'
-import { TypeAnimation } from 'react-type-animation';
-import Footer from './sections/Footer'
 
-const ProcessFlow = () => (
-  <motion.div 
-    className="process-flow"
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    transition={{ duration: 0.8 }}
-  >
-    <div className="process-container">
-      {/* Question Card */}
-      <motion.div 
-        className="process-card question"
-        animate={{ 
-          rotate: [-6, -4, -6],
-          y: [0, -5, 0]
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        whileHover={{ scale: 1.05 }}
-      >
-        <div className="card-content">
-          <svg className="icon pulse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle cx="12" cy="12" r="10"/>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-            <path d="M12 17h.01"/>
-          </svg>
-          <div className="card-label">Ask Question</div>
-        </div>
-        <motion.div 
-          className="glow"
-          animate={{
-            opacity: [0.5, 0.8, 0.5],
-            scale: [1, 1.2, 1]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      </motion.div>
+const learningFeatures = [
+  {
+    title: 'Ask And Learn',
+    text: 'Ask anything and get teacher-style explanations, then a quick summary you can revise in minutes.'
+  },
+  {
+    title: 'Upload Handouts And Images',
+    text: 'Drop your notes, class handouts, or photos. StudyMate explains the topic, simplifies it, and extracts key points.'
+  },
+  {
+    title: 'Generate Quizzes Instantly',
+    text: 'Create MCQs and theory quizzes from your materials and get feedback that helps you improve weak spots.'
+  },
+  {
+    title: 'Learn From YouTube Links',
+    text: 'Paste a video URL to get transcript-based summaries, timestamp explanations, and quiz questions from the lesson.'
+  }
+]
 
-      <div className="connection-line">
-        <motion.div 
-          className="line-progress"
-          animate={{ scaleX: [0, 1] }}
-          transition={{ duration: 1.5, delay: 0.5 }}
-        >
-          <motion.div 
-            className="moving-dot"
-            animate={{
-              x: [0, "100%"],
-              opacity: [0, 1, 0]
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-          />
-        </motion.div>
-        <motion.div 
-          className="progress-label"
-          animate={{
-            scale: [1, 1.05, 1],
-            opacity: [0.8, 1, 0.8]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity
-          }}
-        >
-          AI Processing
-        </motion.div>
-      </div>
-
-      {/* Brain/AI Card */}
-      <motion.div 
-        className="process-card brain"
-        animate={{ 
-          scale: [1, 1.02, 1],
-          rotate: [0, 2, 0]
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        whileHover={{ scale: 1.05 }}
-      >
-        <div className="card-content">
-          <svg className="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M12 8V4H8"/>
-            <rect width="16" height="12" x="4" y="8" rx="2"/>
-            <path d="M2 14h2"/>
-            <path d="M20 14h2"/>
-          </svg>
-          <div className="card-label">AI Analysis</div>
-          <motion.div 
-            className="ripple"
-            animate={{
-              scale: [1, 1.5],
-              opacity: [0.5, 0]
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: "easeOut"
-            }}
-          />
-        </div>
-      </motion.div>
-
-      <div className="connection-line">
-        <motion.div 
-          className="line-progress gradient"
-          animate={{ scaleX: [0, 1] }}
-          transition={{ duration: 1.5, delay: 1 }}
-        >
-          <motion.div 
-            className="moving-dot"
-            animate={{
-              x: [0, "100%"],
-              opacity: [0, 1, 0]
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-          />
-        </motion.div>
-        <motion.div 
-          className="progress-label"
-          animate={{
-            scale: [1, 1.05, 1]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity
-          }}
-        >
-          Personalized
-        </motion.div>
-      </div>
-
-      {/* Solution Card */}
-      <motion.div 
-        className="process-card solution"
-        animate={{ 
-          y: [0, -8, 0],
-          rotate: [0, -2, 0]
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        whileHover={{ scale: 1.05 }}
-      >
-        <div className="card-content">
-          <svg className="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-            <path d="M2 17l10 5 10-5"/>
-            <path d="M2 12l10 5 10-5"/>
-          </svg>
-          <div className="card-label">Learn & Understand</div>
-        </div>
-        <motion.div 
-          className="sparkles"
-          animate={{
-            rotate: [0, 360],
-            scale: [0.8, 1, 0.8]
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-            ease: "linear"
-          }}
-        />
-      </motion.div>
-    </div>
-  </motion.div>
-);
-
-// Add to Landing component after hero section;
-
-const NavLink = ({ to, children, isActive, onClick }) => (
-  <motion.div
-    className={`nav-link ${isActive ? 'active' : ''}`}
-    whileHover={{ scale: 1.05 }}
-    whileTap={{ scale: 0.95 }}
-  >
-    <a onClick={onClick}>{children}</a>
-    {isActive && (
-      <motion.div
-        className="link-indicator"
-        layoutId="indicator"
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      />
-    )}
-  </motion.div>
-);
+const valueTabs = [
+  {
+    title: 'Clarity',
+    text: 'Complex notes and lectures become simple language, key ideas, and practical examples students can actually remember.'
+  },
+  {
+    title: 'Practice',
+    text: 'Every topic turns into mixed quizzes with objective and theory questions so learners can test themselves immediately.'
+  },
+  {
+    title: 'Retention',
+    text: 'Summaries, flash takeaways, and targeted feedback make revision focused instead of overwhelming.'
+  },
+  {
+    title: 'Video Intelligence',
+    text: 'YouTube lessons become searchable study assets with transcript summaries and timestamp-based deep explanations.'
+  }
+]
 
 const Landing = () => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [activeSection, setActiveSection] = useState('home')
-  const location = useLocation()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const scrollToSection = (sectionId) => {
-    document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth' })
-    setIsOpen(false)
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false)
   }
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const sections = ['home', 'about', 'features', 'contact']
-      const scrollPosition = window.scrollY + 100
-
-      sections.forEach(section => {
-        const element = document.getElementById(section)
-        if (element) {
-          const { offsetTop, offsetHeight } = element
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            setActiveSection(section)
-          }
-        }
-      })
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  const headlines = [
-    "Master Complex Subjects with AI",
-    "Learn Faster with AI Assistance", 
-    "Understand Better with AI Support"
-  ];
-
-  const [currentHeadline, setCurrentHeadline] = useState(0);
-  const [isTyping, setIsTyping] = useState(true);
-
-  useEffect(() => {
-    const typingTimer = setTimeout(() => {
-      if (currentHeadline < headlines.length - 1) {
-        setIsTyping(false);
-        setTimeout(() => {
-          setCurrentHeadline(prev => prev + 1);
-          setIsTyping(true);
-        }, 500);
-      }
-    }, 3000);
-
-    return () => clearTimeout(typingTimer);
-  }, [currentHeadline]);
-
   return (
-    <div className="landing-container">
-      <motion.nav 
-        className="landing-nav"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      >
-        <motion.div 
-          className="brand"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <h1>AI StudyMate</h1>
-        </motion.div>
-        
-        <div className="mobile-menu" onClick={() => setIsOpen(!isOpen)}>
-          <motion.span animate={{ rotate: isOpen ? 45 : 0, y: isOpen ? 8 : 0 }} />
-          <motion.span animate={{ opacity: isOpen ? 0 : 1 }} />
-          <motion.span animate={{ rotate: isOpen ? -45 : 0, y: isOpen ? -8 : 0 }} />
+    <div className="landing-page">
+      <header className="landing-header">
+        <div className="landing-header-inner">
+          <Link to="/" className="brand-mark">StudyMate</Link>
+
+          <nav className="header-nav-desktop">
+            <a href="#features" className="header-nav-link">Features</a>
+            <a href="#philosophy" className="header-nav-link">Philosophy</a>
+            <a href="mailto:abrahamfolorunso6@gmail.com" className="header-nav-link">Contact</a>
+          </nav>
+
+          <div className="header-actions-desktop">
+            <Link to="/signup" className="btn btn-solid btn-header">Start free</Link>
+          </div>
+
+          <div className="header-actions-mobile">
+            <Link to="/signup" className="btn btn-solid btn-header">Start free</Link>
+            <button
+              type="button"
+              className="menu-toggle"
+              aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+            >
+              <span className={mobileMenuOpen ? 'bar bar-open-1' : 'bar'} />
+              <span className={mobileMenuOpen ? 'bar bar-open-2' : 'bar'} />
+              <span className={mobileMenuOpen ? 'bar bar-open-3' : 'bar'} />
+            </button>
+          </div>
         </div>
 
-        <AnimatePresence>
-          <motion.div 
-            className={`nav-links ${isOpen ? 'active' : ''}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <NavLink to="home" isActive={activeSection === 'home'} onClick={() => scrollToSection('home')}>
-              Home
-            </NavLink>
-            <NavLink to="about" isActive={activeSection === 'about'} onClick={() => scrollToSection('about')}>
-              About
-            </NavLink>
-            <NavLink to="features" isActive={activeSection === 'features'} onClick={() => scrollToSection('features')}>
-              Features
-            </NavLink>
-            <NavLink to="contact" isActive={activeSection === 'contact'} onClick={() => scrollToSection('contact')}>
-              Contact
-            </NavLink>
-            <motion.div className="auth-buttons">
-              <Link to="/signin">
-                <motion.button className="signin-btn" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  Sign In
-                </motion.button>
-              </Link>
-              <Link to="/signup">
-                <motion.button className="signup-btn" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  Sign Up
-                </motion.button>
-              </Link>
-            </motion.div>
-          </motion.div>
-        </AnimatePresence>
-      </motion.nav>
-      
+        <div className={mobileMenuOpen ? 'header-nav-mobile nav-mobile-open' : 'header-nav-mobile'}>
+          <div className="header-nav-mobile-inner">
+            <a href="#features" className="header-nav-link" onClick={closeMobileMenu}>Features</a>
+            <a href="#philosophy" className="header-nav-link" onClick={closeMobileMenu}>Philosophy</a>
+            <a href="mailto:abrahamfolorunso6@gmail.com" className="header-nav-link" onClick={closeMobileMenu}>Contact</a>
+          </div>
+        </div>
+      </header>
+
       <main>
-        <section id="home" className="hero-section">
-          <div className="hero-background">
-            <motion.div className="mesh-gradient"></motion.div>
-            <div className="grid-overlay"></div>
-            <motion.div 
-              className="floating-shapes"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1 }}
-            >
-              {[...Array(5)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="shape"
-                  animate={{
-                    y: [0, -20, 0],
-                    rotate: [0, 360],
-                    scale: [1, 1.1, 1]
-                  }}
-                  transition={{
-                    duration: 8,
-                    delay: i * 0.2,
-                    repeat: Infinity,
-                    ease: "linear"
-                  }}
-                />
-              ))}
-            </motion.div>
+        <section className="hero">
+          <motion.p
+            className="hero-tag"
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            AI learning coach for real students
+          </motion.p>
+
+          <motion.h1
+            className="hero-title"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <span className="hero-line">Learn deeply.</span>
+            <span className="hero-line hero-line-muted">Revise clearly.</span>
+          </motion.h1>
+
+          <motion.p
+            className="hero-copy"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            Turn your questions, handouts, images, and YouTube lessons into clear explanations, quick summaries, and quiz practice.
+          </motion.p>
+
+          <motion.div
+            className="hero-cta"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <Link to="/signup" className="btn btn-solid btn-large">
+              Start learning free
+              <svg className="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M7 17L17 7" />
+                <path d="M9 7H17V15" />
+              </svg>
+            </Link>
+          </motion.div>
+        </section>
+
+        <section className="hero-showcase-wrap">
+          <div className="hero-showcase-bg">
+            <div className="hero-showcase-frame">
+              <img src="/home.png" alt="StudyMate product preview" className="hero-showcase-image" />
+            </div>
           </div>
+        </section>
 
-          <div className="hero-content-wrapper">
-            <motion.div 
-              className="hero-content"
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
+        <section id="features" className="feature-grid">
+          {learningFeatures.map((feature, index) => (
+            <motion.article
+              key={feature.title}
+              className="feature-card"
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.45, delay: index * 0.08 }}
             >
-              <motion.div 
-                className="hero-badge"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                <span>✨ AI-Powered Learning</span>
-              </motion.div>
+              <h3>{feature.title}</h3>
+              <p>{feature.text}</p>
+            </motion.article>
+          ))}
+        </section>
 
-              <h1 className="hero-title">
-                <motion.div
-                  key={currentHeadline}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+        <section className="workflow-strip">
+          <p>Ask or upload</p>
+          <span className="dot" />
+          <p>Understand the topic</p>
+          <span className="dot" />
+          <p>Take quizzes</p>
+          <span className="dot" />
+          <p>Track improvement</p>
+        </section>
+
+        <section id="philosophy" className="philosophy-section">
+          <p className="section-label">[Our philosophy]</p>
+          <h2>The learners and builders</h2>
+          <p className="philosophy-lead">
+            Every student wants three things from learning: understanding, confidence, and results.
+            StudyMate is designed to transform scattered resources into clear explanations, meaningful practice,
+            and measurable progress.
+          </p>
+
+          <div className="philosophy-shell">
+            <div className="philosophy-orbit" aria-hidden="true">
+              <div className="orbit-core">StudyMate</div>
+              <div className="orbit-node orbit-node-top">Clarity</div>
+              <div className="orbit-node orbit-node-right">Practice</div>
+              <div className="orbit-node orbit-node-bottom">Retention</div>
+              <div className="orbit-node orbit-node-left">Video IQ</div>
+            </div>
+
+            <div className="philosophy-tabs">
+              {valueTabs.map((tab, index) => (
+                <motion.article
+                  key={tab.title}
+                  className="philosophy-tab"
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.35 }}
+                  transition={{ duration: 0.4, delay: index * 0.07 }}
                 >
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    {isTyping && (
-                    <TypeAnimation
-                      sequence={[
-                        "Master Complex Subjects with AI", // Type in
-                        2000, // Wait 2s
-                        "", // Delete
-                        100, // Wait 0.1s
-                        "Learn Faster with AI Assistance",
-                        2000,
-                        "",
-                        100, 
-                        "Understand Better with AI Support",
-                        2000,
-                        "",
-                        100
-                      ]}
-                      wrapper="span"
-                      cursor={true}
-                      repeat={Infinity}
-                      speed={50}
-                      deletionSpeed={50}
-                      className="typed-text"
-                    />
-                    )}
-                  </motion.span>
-                </motion.div>
-              </h1>
-
-              <motion.p 
-                className="hero-subtitle"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.8 }}
-              >
-                Your intelligent study companion that adapts to your learning style
-              </motion.p>
-
-              <ProcessFlow />
-
-              <motion.div 
-                className="hero-cta"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1 }}
-              >
-                {/* <Link to="/signup">
-                  <motion.button 
-                    className="cta-button"
-                    whileHover={{ 
-                      scale: 1.02,
-                      boxShadow: "0 8px 30px rgba(0,198,255,0.3)"
-                    }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <span className="cta-text">Start Learning Now</span>
-                    <motion.span 
-                      className="cta-arrow"
-                      animate={{ x: [0, 5, 0] }}
-                      transition={{
-                        duration: 1.5,
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                      }}
-                    >
-                      →
-                    </motion.span>
-                  </motion.button>
-                </Link> */}
-              </motion.div>
-            </motion.div>
+                  <h3>{tab.title}</h3>
+                  <p>{tab.text}</p>
+                </motion.article>
+              ))}
+            </div>
           </div>
         </section>
 
-        <section id="about" className="section">
-          <h2>About Us</h2>
-          {/* Add about content */}
-        </section>
-
-        <section id="features" className="section">
-          <h2>Features</h2>
-          {/* Add features content */}
-        </section>
-
-        <section id="contact" className="section">
-          <h2>Contact</h2>
-          {/* Add contact content */}
+        <section className="final-cta">
+          <h2>Build stronger study habits with AI that teaches.</h2>
+          <p>From class handouts to YouTube videos, learn, revise, and test yourself in one focused workflow.</p>
+          <div className="hero-cta">
+            <Link to="/signup" className="btn btn-solid btn-large">Create account</Link>
+            <Link to="/signin" className="btn btn-ghost btn-large">I already have an account</Link>
+          </div>
         </section>
       </main>
-
-      <Footer />
     </div>
   )
 }
