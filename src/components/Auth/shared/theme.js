@@ -5,32 +5,29 @@ export const authTheme = createTheme({
     fontFamily: '"Manrope", "Manrope Fallback", system-ui, sans-serif',
     fontWeightRegular: 400,
     fontWeightMedium: 500,
-    h4: {
-      fontWeight: 500,
-      color: '#c4c7c5'
-    }
   },
   palette: {
     mode: 'dark',
     primary: {
-      main: '#4b90ff'
+      main: '#fafafa'
     },
     secondary: {
-      main: '#585858'
+      main: '#bebebe'
     },
     background: {
-      default: '#1f1f1f',
-      paper: 'rgba(31, 31, 31, 0.8)'
+      default: '#111111',
+      paper: '#141414'
+    },
+    text: {
+      primary: '#fafafa',
+      secondary: '#bebebe'
     }
   },
   components: {
-    MuiContainer: {
+    MuiCssBaseline: {
       styleOverrides: {
-        root: {
-          height: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
+        body: {
+          backgroundColor: '#111111',
         }
       }
     },
@@ -38,16 +35,32 @@ export const authTheme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(10px)',
-            transition: 'all 0.2s ease-in-out',
+            backgroundColor: 'rgba(250, 250, 250, 0.03)',
+            borderRadius: '999px',
+            transition: 'all 0.2s ease',
+            '& fieldset': {
+              borderColor: 'rgba(250, 250, 250, 0.2)',
+            },
             '&:hover': {
               '& fieldset': {
-                borderColor: '#64FFDA',
+                borderColor: 'rgba(250, 250, 250, 0.45)',
               },
-              transform: 'translateY(-2px)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            },
+            '&.Mui-focused': {
+              '& fieldset': {
+                borderColor: '#fafafa',
+              },
             }
+          },
+          '& .MuiInputLabel-root': {
+            color: 'rgba(250, 250, 250, 0.62)',
+          },
+          '& .MuiInputLabel-root.Mui-focused': {
+            color: '#fafafa',
+          },
+          '& .MuiInputBase-input': {
+            color: '#fafafa',
+            fontSize: '0.93rem',
           }
         }
       }
@@ -55,13 +68,12 @@ export const authTheme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: '8px',
+          borderRadius: '999px',
           textTransform: 'none',
           fontWeight: 500,
-          transition: 'all 0.2s ease-in-out',
+          transition: 'all 0.2s ease',
           '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            transform: 'translateY(-1px)',
           }
         }
       }

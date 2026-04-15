@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "start": "serve -s dist -l ${PORT:-8080}",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -14,6 +15,7 @@
     "@emotion/styled": "^11.14.0",
     "@fontsource/inter": "^5.1.1",
     "@google/generative-ai": "^0.17.1",
+    "@mui/icons-material": "^6.5.0",
     "@mui/lab": "^6.0.0-beta.24",
     "@mui/material": "^6.0.0",
     "firebase": "^10.13.0",
@@ -23,7 +25,8 @@
     "react-error-boundary": "^5.0.0",
     "react-router-dom": "^6.26.1",
     "react-type-animation": "^3.2.0",
-    "remixicon": "^4.6.0"
+    "remixicon": "^4.6.0",
+    "serve": "^14.2.4"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
