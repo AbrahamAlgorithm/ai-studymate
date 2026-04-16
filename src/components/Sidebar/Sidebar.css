@@ -1,79 +1,160 @@
-.sidebar{
-    min-height: 100vh;
-    display: inline-flex;
-    flex-direction: column;
-    justify-content: space-between;
-    background-color: #e2e6eb;
-    padding: 25px 15px;
+.sidebar {
+  min-height: 100vh;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background-color: #101010;
+  border-right: 1px solid rgba(250, 250, 250, 0.08);
+  padding: 22px 12px;
+  color: #f1f1f1;
 }
 
-.sidebar img{
-    width: 20px;
+.sidebar-dark {
+  --side-bg: #101010;
+  --side-text: #f1f1f1;
+  --side-muted: #a1a1a1;
+  --side-surface: #171717;
+  --side-border: rgba(250, 250, 250, 0.2);
+  --side-divider: rgba(250, 250, 250, 0.08);
+  --side-hover: #171717;
+  --side-icon-filter: brightness(0) invert(1) opacity(0.9);
 }
 
-.sidebar .menu{
-    display: block;
-    margin-left: 10px;
-    cursor: pointer;
+.sidebar-light {
+  --side-bg: #f5f5f5;
+  --side-text: #121212;
+  --side-muted: #5f5f5f;
+  --side-surface: #ebebeb;
+  --side-border: rgba(17, 17, 17, 0.2);
+  --side-divider: rgba(17, 17, 17, 0.12);
+  --side-hover: #e3e3e3;
+  --side-icon-filter: brightness(0) saturate(100%);
+}
+
+.sidebar {
+  background-color: var(--side-bg);
+  border-right: 1px solid var(--side-divider);
+  color: var(--side-text);
+}
+
+.sidebar img {
+  width: 18px;
+}
+
+.sidebar .top {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 0 6px;
+}
+
+.sidebar-brand p {
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.brand-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-meta span {
+  font-size: 0.64rem;
+  color: var(--side-muted);
+  max-width: 145px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar .menu {
+  display: block;
+  cursor: pointer;
 }
 
 .sidebar .new-chat {
-    margin-top: 50px;
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 15px;
-    background-color: #191a1a;
-    border: 1px solid #7b7e7e;
-    border-radius: 40px;
-    font-size: 14px;
-    color: grey;
-    transition: ease 0.25s all;
-    cursor: pointer;
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background-color: var(--side-surface);
+  border: 1px solid var(--side-border);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--side-text);
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .sidebar .new-chat:hover {
-    background-color: rgba(255,255,255,0.1);
+  border-color: var(--side-border);
 }
 
-.sidebar .recent{
-    display: flex;
-    flex-direction: column;
-    animation: fadeIn 1.5s;
+.sidebar .recent {
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.8s;
 }
 
-.sidebar .recent-title{
-    margin-top: 30px;
-    margin-bottom: 20px;
+.sidebar .recent-title {
+  margin-top: 24px;
+  margin-bottom: 14px;
+  font-size: 0.8rem;
+  color: var(--side-muted);
+  padding: 0 6px;
 }
 
-.sidebar .recent-entry{
-    display: flex;
-    align-items: start;
-    gap: 10px;
-    padding: 10px;
-    padding-right: 40px;
-    border-radius: 50px;
-    color: #282828;
-    cursor: pointer;
+.sidebar .recent-entry {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  color: var(--side-text);
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.sidebar .recent-entry:hover{
-    background-color: #e2e6eb;
+.sidebar .recent-entry p {
+  font-size: 0.86rem;
+  line-height: 1.35;
 }
 
-.sidebar .buttom{
-    display: flex;
-    flex-direction: column;
+.sidebar .recent-entry:hover {
+  background-color: var(--side-hover);
 }
 
-.sidebar .buttom-item{
-    padding-right: 10px;
-    cursor: pointer;
+.sidebar .ui-icon {
+  filter: var(--side-icon-filter);
 }
 
-@media (max-width:600px) {
-    .sidebar{
-        display: none;
-    }
+.sidebar .ui-icon.no-filter {
+  filter: none;
+}
+
+.sidebar .bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.sidebar .bottom-item {
+  padding-right: 10px;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .sidebar {
+    display: none;
+  }
 }

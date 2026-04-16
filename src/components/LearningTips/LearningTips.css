@@ -1,0 +1,118 @@
+.learning-tips {
+  min-height: 100vh;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tips-dark {
+  background: #111111;
+  color: #fafafa;
+}
+
+.tips-light {
+  background: #fafafa;
+  color: #111111;
+}
+
+.tips-header {
+  max-width: 1200px;
+  margin: 0 auto 40px;
+  width: 100%;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  color: #8ec7ff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-bottom: 16px;
+  padding: 0;
+  font-weight: 500;
+}
+
+.back-btn:hover {
+  text-decoration: underline;
+}
+
+.tips-header h1 {
+  font-size: 2.2rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.tips-header p {
+  font-size: 1rem;
+  opacity: 0.75;
+}
+
+.tips-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.tip-card {
+  padding: 28px;
+  border-radius: 16px;
+  transition: all 0.2s ease;
+}
+
+.tips-dark .tip-card {
+  background: #151515;
+  border: 1px solid rgba(250, 250, 250, 0.12);
+}
+
+.tips-light .tip-card {
+  background: #f2f2f2;
+  border: 1px solid rgba(17, 17, 17, 0.16);
+}
+
+.tip-card:hover {
+  transform: translateY(-2px);
+}
+
+.tips-dark .tip-card:hover {
+  border-color: rgba(250, 250, 250, 0.32);
+}
+
+.tips-light .tip-card:hover {
+  border-color: rgba(17, 17, 17, 0.35);
+}
+
+.tip-icon {
+  font-size: 2.4rem;
+  margin-bottom: 12px;
+}
+
+.tip-card h2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  letter-spacing: -0.01em;
+}
+
+.tip-card p {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  opacity: 0.8;
+}
+
+@media (max-width: 760px) {
+  .tips-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .tips-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .learning-tips {
+    padding: 24px 16px;
+  }
+}

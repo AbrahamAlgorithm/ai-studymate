@@ -1,18 +1,53 @@
-import React from 'react'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import React, { useContext } from 'react'
+import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom'
 import Sidebar from './components/Sidebar/Sidebar'
 import Main from './components/Main/Main'
 import Signin from './components/Auth/Signin'
 import Signup from './components/Auth/Signup'
 import Landing from './components/Landing/Landing'
+import LearningTips from './components/LearningTips/LearningTips'
+import Progress from './components/Progress/Progress'
+import { Context } from './context/Context'
 import './App.css'
 
-const Home = () => (
-  <div className="home-container">
-    <Sidebar />
-    <Main />
-  </div>
-);
+const Home = () => {
+  const { themeMode } = useContext(Context)
+
+  return (
+    <div className={`home-container theme-${themeMode}`}>
+      <Sidebar />
+      <Main />
+    </div>
+  )
+};
+
+const ProtectedRoute = ({ children }) => {
+  const { currentUser, authReady } = useContext(Context)
+
+  if (!authReady) {
+    return <div className="auth-loading">Loading your workspace...</div>
+  }
+
+  if (!currentUser) {
+    return <Navigate to="/signin" replace />
+  }
+
+  return children
+}
+
+const PublicRoute = ({ children }) => {
+  const { currentUser, authReady } = useContext(Context)
+
+  if (!authReady) {
+    return <div className="auth-loading">Loading...</div>
+  }
+
+  if (currentUser) {
+    return <Navigate to="/chat" replace />
+  }
+
+  return children
+}
 
 const App = () => {
   return (
@@ -20,9 +55,11 @@ const App = () => {
       <Router>
         <Routes>
           <Route path="/" element={<Landing />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/signin" element={<Signin />} />
-          <Route path="/chat" element={<Home />} />
+          <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+          <Route path="/signin" element={<PublicRoute><Signin /></PublicRoute>} />
+          <Route path="/chat" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/learning-tips" element={<ProtectedRoute><LearningTips /></ProtectedRoute>} />
+          <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
         </Routes>
       </Router>
     </div>
