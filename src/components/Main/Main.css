@@ -1,23 +1,17 @@
-.main {
-  flex: 1;
-  min-height: 100vh;
-  padding-bottom: 170px;
-  position: relative;
-  background: #111111;
-  color: #fafafa;
-  overflow: hidden;
-}
+/* ─── Theme Tokens ───────────────────────────────────────────────────────── */
 
 .main-dark {
   --main-bg: #111111;
   --main-text: #fafafa;
   --main-muted: #989898;
   --main-surface: #151515;
-  --main-surface-2: #171717;
-  --main-border: rgba(250, 250, 250, 0.12);
-  --main-border-strong: rgba(250, 250, 250, 0.32);
-  --main-icon-filter: brightness(0) invert(1) opacity(0.9);
+  --main-surface-2: #1a1a1a;
+  --main-border: rgba(250, 250, 250, 0.1);
+  --main-border-strong: rgba(250, 250, 250, 0.28);
+  --main-icon-filter: brightness(0) invert(1) opacity(0.85);
   --main-icon-filter-active: brightness(0) saturate(100%);
+  --user-bubble-bg: #2a2a2a;
+  --user-bubble-text: #fafafa;
 }
 
 .main-light {
@@ -26,21 +20,43 @@
   --main-muted: #5f5f5f;
   --main-surface: #f2f2f2;
   --main-surface-2: #ececec;
-  --main-border: rgba(17, 17, 17, 0.16);
-  --main-border-strong: rgba(17, 17, 17, 0.35);
+  --main-border: rgba(17, 17, 17, 0.14);
+  --main-border-strong: rgba(17, 17, 17, 0.32);
   --main-icon-filter: brightness(0) saturate(100%);
   --main-icon-filter-active: brightness(0) invert(1);
+  --user-bubble-bg: #111111;
+  --user-bubble-text: #fafafa;
 }
 
+/* ─── Root Layout ─────────────────────────────────────────────────────────── */
+
+html,
+body,
+#root {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+/* ─── Main wrapper ───────────────────────────────────────────────────────── */
+
 .main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  overflow: hidden;
+  position: relative;
   background: var(--main-bg);
   color: var(--main-text);
 }
+
+/* ─── Nav ────────────────────────────────────────────────────────────────── */
 
 .main .nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
   padding: 20px 24px;
   border-bottom: 1px solid var(--main-border);
 }
@@ -49,6 +65,11 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* ─── Hamburger: hidden on desktop, shown on mobile ──────────────────────── */
+.hamburger-btn {
+  display: none;
 }
 
 .main .nav .nav-left p {
@@ -77,16 +98,6 @@
   text-overflow: ellipsis;
 }
 
-.theme-toggle {
-  border: 1px solid var(--main-border);
-  background: var(--main-surface);
-  color: var(--main-text);
-  border-radius: 999px;
-  padding: 8px 12px;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
 .nav-chip {
   font-size: 0.78rem;
   color: var(--main-muted);
@@ -100,26 +111,57 @@
   border-radius: 50%;
 }
 
+/* ─── Content area ───────────────────────────────────────────────────────── */
+/*
+  .main-container and .main-bottom are SIBLINGS inside .main (flex column).
+  .main-bottom is NOT a child of .main-container.
+  On mobile .main-bottom becomes position:fixed — completely decoupled —
+  so focusing the textarea can never scroll .main-container.
+*/
+
 .main-container {
-  max-width: 1080px;
-  margin: auto;
-  padding: 26px 24px 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  max-width: 840px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 26px 24px 20px;
 }
+
+/* ─── Greet ──────────────────────────────────────────────────────────────── */
 
 .main .greet {
-  margin: 8px 0 22px;
+  margin: 8px 0 26px;
 }
 
-.main .greet p {
-  font-size: clamp(1.1rem, 5vw, 2.75rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+.main .greet .greet-hi {
+  font-size: clamp(0.95rem, 3vw, 1.25rem);
+  font-weight: 500;
+  color: var(--main-muted);
+  margin-bottom: 6px;
+  letter-spacing: -0.01em;
+}
+
+.main .greet .greet-main {
+  font-size: clamp(1.6rem, 6vw, 3.2rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin-bottom: 10px;
+}
+
+.main .greet .greet-main span {
+  color: var(--main-text);
+}
+
+.main .greet .greet-sub {
+  font-size: clamp(0.88rem, 2.5vw, 1.05rem);
+  line-height: 1.5;
   color: var(--main-muted);
 }
 
-.main .greet span {
-  color: var(--main-text);
-}
+/* ─── Mode switcher ──────────────────────────────────────────────────────── */
 
 .mode-switcher {
   display: grid;
@@ -157,6 +199,8 @@
   border-color: var(--main-text);
 }
 
+/* ─── Mode panel ─────────────────────────────────────────────────────────── */
+
 .mode-panel {
   margin-bottom: 16px;
 }
@@ -181,6 +225,7 @@
   color: var(--main-text);
   border-radius: 999px;
   padding: 10px 14px;
+  font-size: 16px;
   outline: none;
 }
 
@@ -210,6 +255,8 @@
 .hidden-file {
   display: none;
 }
+
+/* ─── Starter cards ──────────────────────────────────────────────────────── */
 
 .main .cards {
   display: grid;
@@ -251,108 +298,176 @@
   transform: translateY(-1px);
 }
 
+/* ─── Bottom bar ─────────────────────────────────────────────────────────── */
+
 .main-bottom {
-  position: absolute;
-  bottom: 0;
-  width: 100%;
-  max-width: 1080px;
-  padding: 0 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(to top, var(--main-bg) 70%, transparent 100%);
+  flex-shrink: 0;
+  padding: 10px 24px 14px;
+  background: linear-gradient(to top, var(--main-bg) 72%, transparent 100%);
 }
+
+/* ─── Search / input box ─────────────────────────────────────────────────── */
 
 .search-box {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  align-items: flex-end;
+  gap: 10px;
   background-color: var(--main-surface-2);
   border: 1px solid var(--main-border);
-  padding: 12px 16px;
-  border-radius: 999px;
+  padding: 10px 14px;
+  border-radius: 22px;
+  max-width: 840px;
+  margin: 0 auto;
+  transition: border-color 0.2s ease;
 }
 
-.search-box img {
-  width: 21px;
-  cursor: pointer;
+.search-box:focus-within {
+  border-color: var(--main-border-strong);
 }
 
-.search-box input {
+.search-box textarea {
   flex: 1;
   background: transparent;
   border: none;
   outline: none;
-  padding: 8px;
-  font-size: 0.98rem;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.5;
+  padding: 4px 2px;
+  font-size: 16px;
+  font-family: inherit;
   color: var(--main-text);
+  max-height: calc(1.5em * 3 + 8px);
+  min-height: 1.5em;
+  -webkit-overflow-scrolling: touch;
 }
 
-.search-box input::placeholder {
+.search-box textarea::placeholder {
   color: var(--main-muted);
 }
 
-.search-box div {
+.search-actions {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+  padding-bottom: 3px;
+}
+
+.search-box img,
+.search-actions img {
+  width: 21px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .main .bottom-info {
-  font-size: 0.82rem;
-  margin: 12px auto 14px;
+  font-size: 0.8rem;
+  margin: 10px auto 0;
   text-align: center;
   color: var(--main-muted);
+  max-width: 840px;
 }
+
+/* ─── Chat result container ──────────────────────────────────────────────── */
 
 .result {
-  margin-top: 10px;
-  border: 1px solid var(--main-border);
-  border-radius: 16px;
-  padding: 18px;
-  max-height: 64vh;
-  overflow-y: auto;
-  background: var(--main-surface);
-}
-
-.result::-webkit-scrollbar {
-  width: 8px;
-}
-
-.result::-webkit-scrollbar-thumb {
-  background: var(--main-border-strong);
-  border-radius: 999px;
+  margin-top: 6px;
 }
 
 .chat-thread {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 20px;
 }
 
 .chat-bubble {
-  max-width: min(78%, 720px);
-  border-radius: 18px;
-  padding: 14px 16px;
+  max-width: min(82%, 680px);
+  display: flex;
+  flex-direction: column;
 }
 
 .user-bubble {
   align-self: flex-end;
-  background: var(--main-text);
-  color: var(--main-bg);
+  background: var(--user-bubble-bg);
+  color: var(--user-bubble-text);
+  border-radius: 20px 20px 4px 20px;
+  padding: 12px 16px;
 }
 
 .ai-bubble {
   align-self: flex-start;
-  background: var(--main-surface-2);
-  border: 1px solid var(--main-border);
+  background: transparent;
+  border: none;
+  padding: 0;
+  max-width: 100%;
 }
+
+.chat-bubble p,
+.ai-bubble p {
+  font-size: 0.98rem;
+  font-weight: 400;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.user-bubble p { color: var(--user-bubble-text); }
+.ai-bubble p   { color: var(--main-text); }
+
+.ai-bubble b,
+.ai-bubble strong {
+  font-weight: 600;
+  color: var(--main-text);
+}
+
+.ai-bubble h1,
+.ai-bubble h2,
+.ai-bubble h3 {
+  margin: 10px 0 4px;
+  font-weight: 600;
+}
+
+.ai-bubble ul,
+.ai-bubble ol {
+  padding-left: 1.4em;
+  margin: 6px 0;
+}
+
+.ai-bubble li {
+  margin-bottom: 4px;
+  line-height: 1.6;
+}
+
+.ai-bubble code {
+  font-family: 'Fira Code', 'SF Mono', monospace;
+  font-size: 0.88rem;
+  background: var(--main-surface);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.ai-bubble pre {
+  background: var(--main-surface);
+  border-radius: 10px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.ai-bubble pre code {
+  background: transparent;
+  padding: 0;
+}
+
+/* ─── Loading shimmer ────────────────────────────────────────────────────── */
 
 .loader {
   width: 100%;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 4px 0;
 }
 
 .loader hr {
@@ -360,32 +475,16 @@
   border: none;
   background: linear-gradient(to right, #1f1f1f, #fafafa, #1f1f1f);
   background-size: 800px 50px;
-  height: 15px;
+  height: 14px;
   animation: loader 2.6s infinite linear;
 }
 
 @keyframes loader {
-  0% {
-    background-position: -800px 0;
-  }
-  100% {
-    background-position: 800px 0;
-  }
+  0%   { background-position: -800px 0; }
+  100% { background-position: 800px 0; }
 }
 
-.chat-bubble p {
-  font-size: 0.98rem;
-  font-weight: 400;
-  line-height: 1.65;
-}
-
-.user-bubble p {
-  color: var(--main-bg);
-}
-
-.ai-bubble p {
-  color: var(--main-text);
-}
+/* ─── Icon helpers ───────────────────────────────────────────────────────── */
 
 .ui-icon {
   filter: var(--main-icon-filter);
@@ -405,6 +504,8 @@
   filter: none;
 }
 
+/* ─── Tablet (≤ 980 px) ─────────────────────────────────────────────────── */
+
 @media (max-width: 980px) {
   .mode-switcher {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -415,21 +516,73 @@
   }
 }
 
+/* ─── Mobile (≤ 760 px) ─────────────────────────────────────────────────── */
+
 @media (max-width: 760px) {
+
   .main {
-    padding-bottom: 185px;
+    height: 100svh;
   }
 
-  .main-container {
-    padding: 20px 14px 0;
-  }
-
-  .main .greet p {
-    font-size: 1.8rem;
+  .main .nav {
+    padding: 12px 16px;
+    flex-shrink: 0;
   }
 
   .user-meta {
     display: none;
+  }
+
+  /* Three-line hamburger icon */
+  .hamburger-btn {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+
+  .hamburger-btn span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: var(--main-text);
+    border-radius: 2px;
+    transition: opacity 0.2s ease;
+  }
+
+  .hamburger-btn:active span {
+    opacity: 0.6;
+  }
+
+  /* Content area */
+  .main-container {
+    padding: 16px 14px 10px;
+    flex: 1 1 auto;
+  }
+
+  /* Dashboard: lock scroll so keyboard cannot push greeting up */
+  .main-container.dashboard-mode {
+    overflow: hidden;
+  }
+
+  /* Chat mode: allow normal scrolling */
+  .main-container:not(.dashboard-mode) {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding-bottom: 100px;
+  }
+
+  .main .greet .greet-main {
+    font-size: 1.8rem;
   }
 
   .youtube-inline,
@@ -439,10 +592,43 @@
   }
 
   .main .cards {
-    grid-template-columns: 1fr;
+    display: none;
   }
 
+  /* Fixed input bar — decoupled from content so keyboard cannot move content */
   .main-bottom {
-    padding: 0 14px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    bottom: env(keyboard-inset-height, 0px);
+    width: 100%;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    background: var(--main-bg);
+    border-top: 1px solid var(--main-border);
+    z-index: 50;
   }
+
+  .search-box {
+    padding: 8px 12px;
+    border-radius: 18px;
+  }
+
+  .search-box textarea {
+    font-size: 16px;
+  }
+
+  .chat-bubble {
+    max-width: 85%;
+  }
+
+  .ai-bubble {
+    max-width: 100%;
+  }
+
+  .main .bottom-info {
+    margin: 6px auto 0;
+    font-size: 0.72rem;
+  }
+
 }

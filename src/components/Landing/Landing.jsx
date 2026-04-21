@@ -17,7 +17,7 @@ const Landing = () => {
           <Link to="/" className="brand-mark">StudyMate</Link>
 
           <nav className="header-nav-desktop">
-            <a href="mailto:abrahamfolorunso6@gmail.com" className="header-nav-link">Contact</a>
+            <Link to="/contact" className="header-nav-link">Contact</Link>
           </nav>
 
           <div className="header-actions-desktop">
@@ -42,7 +42,7 @@ const Landing = () => {
 
         <div className={mobileMenuOpen ? 'header-nav-mobile nav-mobile-open' : 'header-nav-mobile'}>
           <div className="header-nav-mobile-inner">
-            <a href="mailto:abrahamfolorunso6@gmail.com" className="header-nav-link" onClick={closeMobileMenu}>Contact</a>
+            <Link to="/contact" className="header-nav-link" onClick={closeMobileMenu}>Contact</Link>
           </div>
         </div>
       </header>

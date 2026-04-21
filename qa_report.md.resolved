@@ -1,0 +1,62 @@
+# AI StudyMate - QA Testing Report
+
+## Executive Summary
+A comprehensive Quality Assurance (QA) pass was performed on the AI StudyMate web application to evaluate its core interactions, User Interface (UI), User Experience (UX), authentication flow, and mobile responsiveness. 
+
+Overall, the application handles basic navigation and client-side routing well. The authentication flow (registration & auto-login) functions correctly. However, a critical issue was found with the AI response functionality, alongside several minor UI misalignments and UX friction points, particularly on mobile devices.
+
+---
+
+## 1. Functional Errors & Bugs
+
+### 1.1 AI Response Failure (Critical)
+*   **Location:** Dashboard > "Ask & Learn" (and potentially other modes)
+*   **Description:** When submitting a prompt (e.g., clicking the suggested "Newton's Second Law" card), the application enters a loading state but fails to return an AI-generated response. 
+*   **Potential Cause:** Missing API keys (Google Generative AI) in the local environment, backend connectivity issues, or an unhandled exception in the API call logic.
+*   **Recommendation:** Verify that API environment variables are correctly loaded and implement proper error handling with user-facing error messages if the AI service is unreachable.
+
+### 1.2 Dashboard Navigation Bug (Minor)
+*   **Location:** Internal Chat View
+*   **Description:** Clicking the primary "StudyMate AI" logo in the chat view header does not navigate the user back to the main dashboard as expected. The user must discover and use the `+` button in the sidebar to return.
+*   **Recommendation:** Ensure the main logo wraps a `<Link to="/">` (or similar router functional equivalent) to return to the core dashboard state reliably.
+
+---
+
+## 2. User Interface (UI) Issues
+
+### 2.1 Stray Character in Hero Mockup
+*   **Location:** Landing Page > Hero Section
+*   **Description:** There is a stray backslash (`\`) visible in the UI mockup image (or rendered DOM element) positioned directly above the text input area.
+*   **Recommendation:** Remove the stray character from the source component code.
+
+### 2.2 Mobile Burger Menu Alignment
+*   **Location:** Dashboard > Mobile View (Viewport ~375px)
+*   **Description:** The "burger menu" icon used to open the sidebar is positioned too tightly against the top-left edge of the screen.
+*   **Recommendation:** Increase the `padding` or `margin` of the menu toggle button to ensure it is comfortable to tap, particularly avoiding the curved edges or status bar overlay of modern mobile devices.
+
+### 2.3 Mobile Landing Page Menu Spacing
+*   **Location:** Landing Page > Mobile View
+*   **Description:** The mobile navigation menu toggle requires minor padding adjustments in the header to achieve better visual balance with the logo.
+*   **Recommendation:** Center the toggle icon vertically with the logo and add consistent padding.
+
+---
+
+## 3. User Experience (UX) Recommendations
+
+### 3.1 Authentication Flow (Positive)
+*   **Observation:** The registration process correctly auto-logs the user in and redirects them to the dashboard. Persistent login state is properly maintained between page reloads and route changes.
+
+### 3.2 Landing Page Content
+*   **Observation:** The landing page is very spartan. It currently lacks detailed feature explanations, a clear "How it works" section, or any social proof/testimonials.
+*   **Recommendation:** Expand the landing page copy to build trust and clearly explain the benefits of the four core AI modes before asking users to create an account.
+
+### 3.3 Sidebar Icon Visibility
+*   **Location:** Dashboard Sidebar
+*   **Observation:** When using the application, the icons in the sidebar lack descriptive labels or tooltips, which could make discoverability difficult for first-time users.
+*   **Recommendation:** Add HTML `title` attributes or dedicated tooltip components to the sidebar icons, or expand the sidebar to show text labels when the viewport width permits.
+
+---
+
+## Included Media
+A recording of the automated browser QA pass is available below for visual reference of the interactions and layout: 
+![QA Session Recording](/Users/abrahamfolorunso/.gemini/antigravity/brain/280b040d-3295-494d-b2bd-0dff5587cb63/qa_study_app_1776774569764.webp)

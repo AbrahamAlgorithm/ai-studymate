@@ -5,6 +5,7 @@ import Main from './components/Main/Main'
 import Signin from './components/Auth/Signin'
 import Signup from './components/Auth/Signup'
 import Landing from './components/Landing/Landing'
+import Contact from './components/Contact/Contact'
 import LearningTips from './components/LearningTips/LearningTips'
 import Progress from './components/Progress/Progress'
 import { Context } from './context/Context'
@@ -12,11 +13,12 @@ import './App.css'
 
 const Home = () => {
   const { themeMode } = useContext(Context)
+  const [sidebarOpen, setSidebarOpen] = React.useState(false)
 
   return (
     <div className={`home-container theme-${themeMode}`}>
-      <Sidebar />
-      <Main />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Main onOpenSidebar={() => setSidebarOpen(true)} />
     </div>
   )
 };
@@ -55,6 +57,7 @@ const App = () => {
       <Router>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
           <Route path="/signin" element={<PublicRoute><Signin /></PublicRoute>} />
           <Route path="/chat" element={<ProtectedRoute><Home /></ProtectedRoute>} />

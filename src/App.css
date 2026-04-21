@@ -5,13 +5,14 @@
   }
   
   .app {
-    min-height: 100vh;
+    min-height: 100%;
     width: 100%;
   }
-  
+
   .home-container {
     display: flex;
-    min-height: 100vh;
+    height: 100%;          /* lock to viewport, no overscroll */
+    overflow: hidden;
   }
 
   .home-container.theme-dark {

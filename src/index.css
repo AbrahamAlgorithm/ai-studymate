@@ -1,25 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap');
-*{
+
+/* Prevent iOS elastic scroll bounce which causes dashboard "shaking" */
+html,
+body {
+  height: 100%;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+}
+
+* {
   padding: 0;
   margin: 0;
   box-sizing: border-box;
   font-family: "Manrope", "Manrope Fallback", system-ui, sans-serif;
   font-weight: 400;
 }
+
 body {
   font-family: "Manrope", "Manrope Fallback", system-ui, sans-serif;
   font-weight: 400;
 }
-#root{
-  min-height: 100vh;
+
+#root {
+  height: 100%;
   display: flex;
-  animation: fadeIn 1.5s;
+  animation: fadeIn 1.2s ease both;
 }
+
 @keyframes fadeIn {
-  0%{
-    opacity: 0;
-  }
-  100%{
-    opacity: 1;
-  }
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
 }

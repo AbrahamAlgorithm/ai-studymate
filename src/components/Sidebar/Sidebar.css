@@ -1,5 +1,8 @@
+/* ─── Sidebar base ───────────────────────────────────────────────────────── */
+
 .sidebar {
-  min-height: 100vh;
+  height: 100%;
+  overflow-y: auto;
   display: inline-flex;
   flex-direction: column;
   justify-content: space-between;
@@ -7,7 +10,10 @@
   border-right: 1px solid rgba(250, 250, 250, 0.08);
   padding: 22px 12px;
   color: #f1f1f1;
+  flex-shrink: 0;
 }
+
+/* ─── Theme tokens ───────────────────────────────────────────────────────── */
 
 .sidebar-dark {
   --side-bg: #101010;
@@ -36,6 +42,8 @@
   border-right: 1px solid var(--side-divider);
   color: var(--side-text);
 }
+
+/* ─── Inner structure ────────────────────────────────────────────────────── */
 
 .sidebar img {
   width: 18px;
@@ -153,8 +161,60 @@
   cursor: pointer;
 }
 
+/* Empty sessions message */
+.recent-empty {
+  font-size: 0.8rem;
+  color: var(--side-muted);
+  padding: 4px 6px;
+  font-style: italic;
+}
+
+/* ─── Mobile drawer ──────────────────────────────────────────────────────── */
+/*
+  On mobile the sidebar is completely hidden until opened.
+  When isOpen=true the .sidebar-open class is added and the panel slides in
+  from the left using a CSS transform transition.
+  The backdrop sits behind it (z-index 199) and closes it on tap.
+  The sidebar itself is z-index 200 so it always draws above the content.
+*/
+
 @media (max-width: 760px) {
+
+  /* Base: hidden off-screen to the left */
   .sidebar {
-    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100svh;
+    width: 82vw;
+    max-width: 320px;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    overflow-y: auto;
   }
+
+  /* Slide in when open */
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 32px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Semi-transparent backdrop — tap to close */
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 199;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    animation: backdropFadeIn 0.25s ease both;
+  }
+
+  @keyframes backdropFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
 }
