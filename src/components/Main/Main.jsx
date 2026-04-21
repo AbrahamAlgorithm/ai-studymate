@@ -13,15 +13,38 @@ const Main = ({ onOpenSidebar }) => {
     const touchStartX = useRef(null)
     const touchStartYRef = useRef(null)
 
-    // ── Auto-grow textarea up to 3 rows ──────────────────────────────────────
+    // ── Auto-grow textarea up to 5 rows ────────────────────────────────────
     useEffect(() => {
         const ta = textareaRef.current
         if (!ta) return
         ta.style.height = 'auto'
         const lineHeight = parseInt(getComputedStyle(ta).lineHeight, 10) || 22
-        const maxHeight = lineHeight * 3 + 16
+        const maxHeight = lineHeight * 5 + 16
         ta.style.height = Math.min(ta.scrollHeight, maxHeight) + 'px'
     }, [input])
+
+    // ── Proactive iOS body-freeze ─────────────────────────────────────────────
+    // iOS Safari scrolls the <body> when any input is focused, even position:fixed
+    // inputs — and it does so BEFORE the `focus` event fires in JavaScript.
+    // The only reliable fix is to freeze the body on MOUNT so iOS never has
+    // permission to scroll the document at all. All scrolling that matters
+    // (chat results) happens inside .main-container with overflow-y:auto.
+    useEffect(() => {
+        if (window.innerWidth > 760) return
+        const body = document.body
+        body.style.position = 'fixed'
+        body.style.top = '0'
+        body.style.left = '0'
+        body.style.right = '0'
+        body.style.overflow = 'hidden'
+        return () => {
+            body.style.position = ''
+            body.style.top = ''
+            body.style.left = ''
+            body.style.right = ''
+            body.style.overflow = ''
+        }
+    }, []) // ← once on mount; unmount cleanup restores it
 
     // ── Swipe-from-left-edge to open sidebar ──────────────────────────────────
     useEffect(() => {
@@ -116,6 +139,11 @@ const Main = ({ onOpenSidebar }) => {
     const sendPrompt = (promptText) => {
         const clean = (promptText || '').trim()
         if (!clean || loading) return
+        // Clear the input box immediately — don't wait for the AI response
+        setInput('')
+        if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto'
+        }
         onSent(clean)
     }
 
@@ -147,6 +175,28 @@ const Main = ({ onOpenSidebar }) => {
         return 'there'
     })()
 
+    // ── Initials from email or displayName ────────────────────────────────────
+    const getInitials = (user) => {
+        if (!user) return '?'
+        // Prefer Firebase displayName: "Abraham Folorunso" → "AF"
+        if (user.displayName) {
+            const parts = user.displayName.trim().split(/\s+/).filter(Boolean)
+            if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+            return parts[0].slice(0, 2).toUpperCase()
+        }
+        // Email-only: strip trailing digits, take first 2 letters
+        // abraham234@gmail.com → "AB" | daretimileyin@gmail.com → "DA"
+        if (user.email) {
+            const raw = user.email.split('@')[0].replace(/\d+$/, '')
+            return raw.slice(0, 2).toUpperCase()
+        }
+        return '?'
+    }
+
+    const userInitials = getInitials(currentUser)
+
+    // Pick a stable background hue from the initials string
+    const avatarHue = ((userInitials.charCodeAt(0) || 0) * 37 + (userInitials.charCodeAt(1) || 0) * 17) % 360
     return (
         <div ref={mainRef} className={`main ${themeMode === 'light' ? 'main-light' : 'main-dark'}`}>
             <input
@@ -170,7 +220,14 @@ const Main = ({ onOpenSidebar }) => {
                     <div className="user-meta">
                         <p>{currentUser?.email || 'Guest user'}</p>
                     </div>
-                    <img src={assets.user_icon} alt="User" />
+                    <div
+                        className="user-avatar-initials"
+                        style={{ background: `hsl(${avatarHue},55%,40%)` }}
+                        title={currentUser?.email || 'User'}
+                        aria-label={`User avatar: ${userInitials}`}
+                    >
+                        {userInitials}
+                    </div>
                 </div>
             </div>
 
@@ -244,7 +301,9 @@ const Main = ({ onOpenSidebar }) => {
                             </div>
                             <div className="chat-bubble ai-bubble">
                                 {loading ? (
-                                    <div className="loader"><hr /><hr /><hr /></div>
+                                    <div className="thinking-dots">
+                                        <span /><span /><span />
+                                    </div>
                                 ) : (
                                     <p dangerouslySetInnerHTML={{ __html: resultData }}></p>
                                 )}

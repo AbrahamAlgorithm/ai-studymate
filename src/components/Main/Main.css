@@ -24,8 +24,8 @@
   --main-border-strong: rgba(17, 17, 17, 0.32);
   --main-icon-filter: brightness(0) saturate(100%);
   --main-icon-filter-active: brightness(0) invert(1);
-  --user-bubble-bg: #111111;
-  --user-bubble-text: #fafafa;
+  --user-bubble-bg: #e4e4e4;
+  --user-bubble-text: #111111;
 }
 
 /* ─── Root Layout ─────────────────────────────────────────────────────────── */
@@ -34,6 +34,7 @@ html,
 body,
 #root {
   height: 100%;
+  overflow: hidden;
   overscroll-behavior: none;
 }
 
@@ -109,6 +110,24 @@ body,
 .main .nav img {
   width: 36px;
   border-radius: 50%;
+}
+
+/* Initials avatar — replaces the user icon image */
+.user-avatar-initials {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  cursor: default;
+  user-select: none;
+  /* background set inline via hsl(hue,55%,40%) for per-user colour */
 }
 
 /* ─── Content area ───────────────────────────────────────────────────────── */
@@ -337,7 +356,7 @@ body,
   font-size: 16px;
   font-family: inherit;
   color: var(--main-text);
-  max-height: calc(1.5em * 3 + 8px);
+  max-height: calc(1.5em * 5 + 8px);
   min-height: 1.5em;
   -webkit-overflow-scrolling: touch;
 }
@@ -412,8 +431,19 @@ body,
   word-break: break-word;
 }
 
-.user-bubble p { color: var(--user-bubble-text); }
-.ai-bubble p   { color: var(--main-text); }
+.user-bubble p {
+  color: var(--user-bubble-text);
+  /* Truncate very long messages to 6 lines with ellipsis */
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ai-bubble p {
+  color: var(--main-text);
+  /* AI response always shows in full */
+}
 
 .ai-bubble b,
 .ai-bubble strong {
@@ -484,6 +514,39 @@ body,
   100% { background-position: 800px 0; }
 }
 
+/* ─── Thinking dots (AI is generating) ──────────────────────────────────── */
+
+.thinking-dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 2px;
+}
+
+.thinking-dots span {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--main-muted);
+  animation: thinking-bounce 1.2s ease-in-out infinite both;
+}
+
+.thinking-dots span:nth-child(1) { animation-delay: 0s; }
+.thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes thinking-bounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-7px);
+    opacity: 1;
+  }
+}
+
 /* ─── Icon helpers ───────────────────────────────────────────────────────── */
 
 .ui-icon {
@@ -521,7 +584,12 @@ body,
 @media (max-width: 760px) {
 
   .main {
-    height: 100svh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: auto; /* fixed positioning replaces height:100svh */
   }
 
   .main .nav {
