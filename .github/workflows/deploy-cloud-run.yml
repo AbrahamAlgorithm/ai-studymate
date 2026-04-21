@@ -41,6 +41,8 @@ jobs:
         if: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER != '' && env.GCP_SERVICE_ACCOUNT_EMAIL != '' }}
         uses: google-github-actions/auth@v2
         with:
+          create_credentials_file: true
+          export_environment_variables: true
           workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: ${{ env.GCP_SERVICE_ACCOUNT_EMAIL }}
 
@@ -48,10 +50,22 @@ jobs:
         if: ${{ (env.GCP_WORKLOAD_IDENTITY_PROVIDER == '' || env.GCP_SERVICE_ACCOUNT_EMAIL == '') && env.GCP_SA_KEY != '' }}
         uses: google-github-actions/auth@v2
         with:
+          create_credentials_file: true
+          export_environment_variables: true
           credentials_json: ${{ env.GCP_SA_KEY }}
 
       - name: Setup gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
+
+      - name: Activate Google Cloud credentials
+        run: |
+          if [[ -z "${GOOGLE_GHA_CREDS_PATH:-}" ]]; then
+            echo "No Google Cloud credentials were configured. Set either Workload Identity secrets or GCP_SA_KEY."
+            exit 1
+          fi
+
+          gcloud auth login --cred-file="$GOOGLE_GHA_CREDS_PATH" --quiet
+          gcloud config set project my-portfolio-492519
 
       - name: Deploy to Cloud Run
         run: |
