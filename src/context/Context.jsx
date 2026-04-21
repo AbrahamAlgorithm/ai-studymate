@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
     addDoc,
@@ -70,7 +70,7 @@ const ContextProvider = (props) => {
                 });
 
                 setPrevPrompts(historyItems);
-            } catch (error) {
+            } catch (_error) {
                 setPrevPrompts([]);
             }
         };
@@ -193,7 +193,7 @@ const ContextProvider = (props) => {
                     updatedAt: serverTimestamp(),
                 });
             }
-        } catch (error) {
+        } catch (_error) {
             const fallbackResponse = "Something went wrong while generating your response. Please try again.";
             setResultData(fallbackResponse);
 

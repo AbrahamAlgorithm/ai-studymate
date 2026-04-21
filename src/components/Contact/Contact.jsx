@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import '../Landing/Landing.css'
@@ -46,7 +46,7 @@ const Contact = () => {
       })
 
       setTimeout(() => setSubmitStatus(null), 3000)
-    } catch (error) {
+    } catch (_error) {
       setSubmitStatus('error')
       setTimeout(() => setSubmitStatus(null), 3000)
     } finally {

@@ -1,10 +1,10 @@
-import React, { useContext } from 'react'
+import { useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Progress.css'
 import { Context } from '../../context/Context'
 
 const Progress = () => {
-    const { themeMode, prevPrompts, currentUser } = useContext(Context)
+    const { themeMode, prevPrompts } = useContext(Context)
     const navigate = useNavigate()
 
     const totalSessions = prevPrompts.length

@@ -1,4 +1,4 @@
-import React, { useContext } from 'react'
+import { useContext, useState } from 'react'
 import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom'
 import Sidebar from './components/Sidebar/Sidebar'
 import Main from './components/Main/Main'
@@ -13,7 +13,7 @@ import './App.css'
 
 const Home = () => {
   const { themeMode } = useContext(Context)
-  const [sidebarOpen, setSidebarOpen] = React.useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <div className={`home-container theme-${themeMode}`}>
