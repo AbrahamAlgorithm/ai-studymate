@@ -21,10 +21,12 @@ const Landing = () => {
           </nav>
 
           <div className="header-actions-desktop">
+            <Link to="/signin" className="header-nav-link">Sign in</Link>
             <Link to="/signup" className="btn btn-solid btn-header">Start free</Link>
           </div>
 
           <div className="header-actions-mobile">
+            <Link to="/signin" className="header-nav-link">Sign in</Link>
             <Link to="/signup" className="btn btn-solid btn-header">Start free</Link>
             <button
               type="button"

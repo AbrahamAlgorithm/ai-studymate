@@ -169,6 +169,7 @@
   font-style: italic;
 }
 
+
 /* ─── Mobile drawer ──────────────────────────────────────────────────────── */
 /*
   On mobile the sidebar is completely hidden until opened.
@@ -199,6 +200,12 @@
   .sidebar.sidebar-open {
     transform: translateX(0);
     box-shadow: 4px 0 32px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Hide the sidebar's internal hamburger on mobile 
+     because the header hamburger handles the toggle. */
+  .sidebar-brand .menu {
+    display: none;
   }
 
   /* Semi-transparent backdrop — tap to close */

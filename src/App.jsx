@@ -13,12 +13,25 @@ import './App.css'
 
 const Home = () => {
   const { themeMode } = useContext(Context)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Persist sidebar preference across refreshes and re-logins
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('sm_sidebar_open')
+    return saved !== null ? saved === 'true' : true // default: open
+  })
+
+  const toggleSidebar = () => {
+    setSidebarOpen(prev => {
+      const next = !prev
+      localStorage.setItem('sm_sidebar_open', String(next))
+      return next
+    })
+  }
 
   return (
     <div className={`home-container theme-${themeMode}`}>
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <Main onOpenSidebar={() => setSidebarOpen(true)} />
+      <Sidebar isOpen={sidebarOpen} onClose={toggleSidebar} />
+      <Main onOpenSidebar={toggleSidebar} />
     </div>
   )
 };

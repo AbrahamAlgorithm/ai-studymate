@@ -30,6 +30,7 @@ const styles = {
         backgroundColor: '#111111',
         color: '#fafafa',
         padding: '24px',
+        position: 'relative',
     },
     authCard: {
         width: '100%',
@@ -154,6 +155,32 @@ const Signin = () => {
                 transition={{ duration: 0.35 }}
                 sx={styles.pageContainer}
             >
+                {/* ── Back to landing ── */}
+                <Box
+                    component={Link}
+                    to="/"
+                    sx={{
+                        position: 'absolute',
+                        top: 20,
+                        left: 24,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.75,
+                        color: 'rgba(250,250,250,0.6)',
+                        textDecoration: 'none',
+                        fontSize: '0.88rem',
+                        fontWeight: 500,
+                        transition: 'color 0.2s',
+                        '&:hover': { color: '#fafafa' },
+                    }}
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
+                    </svg>
+                    Back
+                </Box>
+
                 <Box
                     component={motion.div}
                     initial={{ y: 18, opacity: 0 }}

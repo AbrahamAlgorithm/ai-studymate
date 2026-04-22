@@ -34,8 +34,10 @@ html,
 body,
 #root {
   height: 100%;
-  overflow: hidden;
   overscroll-behavior: none;
+  /* overflow is NOT set here — each page manages its own scroll.
+     The chat route freezes the body via JS on mobile; landing/auth
+     pages need normal document scroll. */
 }
 
 /* ─── Main wrapper ───────────────────────────────────────────────────────── */
@@ -68,7 +70,7 @@ body,
   gap: 12px;
 }
 
-/* ─── Hamburger: hidden on desktop, shown on mobile ──────────────────────── */
+/* Hamburger: hidden on desktop, shown on mobile only */
 .hamburger-btn {
   display: none;
 }
@@ -601,7 +603,7 @@ body,
     display: none;
   }
 
-  /* Three-line hamburger icon */
+  /* Hamburger: shown on mobile, hidden on desktop */
   .hamburger-btn {
     display: flex;
     flex-direction: column;
@@ -627,7 +629,7 @@ body,
   }
 
   .hamburger-btn:active span {
-    opacity: 0.6;
+    opacity: 0.5;
   }
 
   /* Content area */
