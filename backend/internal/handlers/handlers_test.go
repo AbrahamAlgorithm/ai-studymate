@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/genai"
@@ -114,6 +115,7 @@ func TestAIErrorsAreMappedWithoutLeakingDetails(t *testing.T) {
 		want int
 	}{
 		{ai.ErrNotConfigured, http.StatusServiceUnavailable},
+		{ai.QuotaError{RetryAfter: 2 * time.Hour}, http.StatusTooManyRequests},
 		{genai.APIError{Code: 503, Status: "UNAVAILABLE"}, http.StatusServiceUnavailable},
 		{context.DeadlineExceeded, http.StatusGatewayTimeout},
 		{errSecret("upstream said: key AIza-secret invalid"), http.StatusBadGateway},
@@ -380,5 +382,13 @@ func TestStreamTellsTheClientToResetWhenAModelDiesHalfway(t *testing.T) {
 	reset := strings.Index(body, "event: reset")
 	if reset < 0 || reset > strings.Index(body, "a full") || !strings.Contains(body, "event: done") {
 		t.Fatalf("expected chunk, reset, then the new answer:\n%s", body)
+	}
+}
+
+func TestQuotaMessageSaysWhenItComesBack(t *testing.T) {
+	r := newTestRouter(New(&fakeAI{err: ai.QuotaError{RetryAfter: 118 * time.Minute}}))
+	w, out := postJSON(t, r, "/chat", map[string]any{"message": "hi"})
+	if w.Code != http.StatusTooManyRequests || !strings.Contains(out["error"].(string), "about 2 hours") {
+		t.Fatalf("status = %d, body = %v", w.Code, out)
 	}
 }

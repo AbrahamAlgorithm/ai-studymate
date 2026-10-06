@@ -26,7 +26,7 @@ type fakeModel struct {
 
 func fakeGemini(models []string, behaviour map[string]fakeModel) (*Gemini, *[]string) {
 	var calls []string
-	g := &Gemini{models: models, thinking: genai.ThinkingLevelMinimal, busyTill: map[string]time.Time{}}
+	g := &Gemini{models: models, thinking: genai.ThinkingLevelMinimal, busyTill: map[string]time.Time{}, quotaTill: map[string]time.Time{}}
 	g.stream = func(_ context.Context, model string, _ []*genai.Content, _ *genai.GenerateContentConfig) iter.Seq2[*genai.GenerateContentResponse, error] {
 		calls = append(calls, model)
 		b, ok := behaviour[model]
@@ -119,7 +119,7 @@ func TestSlowStartMovesToTheNextModel(t *testing.T) {
 	if time.Since(start) > time.Second {
 		t.Errorf("took %s, the slow model should have been dropped after 50ms", time.Since(start))
 	}
-	if c := g.candidates(); c[0] != "b" {
+	if c, _ := g.candidates(); c[0] != "b" {
 		t.Errorf("slow model should be cooling down, candidates = %v", c)
 	}
 }
@@ -136,7 +136,7 @@ func TestBusyModelGoesToTheBackForAWhile(t *testing.T) {
 	}
 
 	g.busyTill["a"] = time.Now().Add(-time.Second)
-	if c := g.candidates(); c[0] != "a" {
+	if c, _ := g.candidates(); c[0] != "a" {
 		t.Errorf("a should be first again after the cooldown, got %v", c)
 	}
 }
@@ -222,4 +222,41 @@ func TestGeminiLive(t *testing.T) {
 		t.Errorf("unexpected JSON answer: %q", resp.Text)
 	}
 	t.Logf("json answered by %s: %s", resp.Model, resp.Text)
+}
+
+func outOfQuota(retry string) genai.APIError {
+	return genai.APIError{Code: 429, Status: "RESOURCE_EXHAUSTED", Details: []map[string]any{
+		{"@type": "type.googleapis.com/google.rpc.QuotaFailure"},
+		{"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": retry},
+	}}
+}
+
+func TestOutOfQuotaModelIsSkippedUntilItResets(t *testing.T) {
+	g, calls := fakeGemini([]string{"a", "b"}, map[string]fakeModel{"a": {err: outOfQuota("7263s")}})
+	if _, err := g.Chat(context.Background(), hi); err != nil {
+		t.Fatal(err)
+	}
+	*calls = nil
+	if _, err := g.Chat(context.Background(), hi); err != nil || strings.Join(*calls, ",") != "b" {
+		t.Fatalf("a shouldn't even be tried while it's out of quota, calls = %v, err = %v", *calls, err)
+	}
+	if left := time.Until(g.quotaTill["a"]); left < 2*time.Hour {
+		t.Errorf("should wait for google's retryDelay (~2h), waiting %s", left)
+	}
+}
+
+func TestEveryModelOutOfQuotaFailsFast(t *testing.T) {
+	g, calls := fakeGemini([]string{"a", "b"}, map[string]fakeModel{"a": {err: outOfQuota("3600s")}, "b": {err: outOfQuota("600s")}})
+	if _, err := g.Chat(context.Background(), hi); err == nil {
+		t.Fatal("expected an error")
+	}
+	*calls = nil
+	_, err := g.Chat(context.Background(), hi)
+	var qe QuotaError
+	if !errors.As(err, &qe) || len(*calls) != 0 {
+		t.Fatalf("should fail without calling anyone, err = %v, calls = %v", err, *calls)
+	}
+	if wait, ok := RetryAfter(err); !ok || wait > 10*time.Minute || wait < 9*time.Minute {
+		t.Errorf("should report the soonest reset (~10m), got %s", wait)
+	}
 }

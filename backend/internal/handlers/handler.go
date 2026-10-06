@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
@@ -72,12 +73,37 @@ func aiErrorMessage(err error) (int, string) {
 	switch {
 	case errors.Is(err, ai.ErrNotConfigured):
 		return http.StatusServiceUnavailable, "The AI isn't set up on the server yet."
+	case isQuota(err):
+		wait, _ := ai.RetryAfter(err)
+		return http.StatusTooManyRequests, "StudyMate has used up its AI quota for now. Try again in " + roughly(wait) + "."
 	case ai.IsBusy(err):
 		return http.StatusServiceUnavailable, "The AI is busy right now. Give it a minute and try again."
 	case errors.Is(err, context.DeadlineExceeded):
 		return http.StatusGatewayTimeout, "That took too long. Please try again."
 	default:
 		return http.StatusBadGateway, "Couldn't get an answer right now. Please try again."
+	}
+}
+
+func isQuota(err error) bool {
+	var qe ai.QuotaError
+	if errors.As(err, &qe) {
+		return true
+	}
+	_, ok := ai.RetryAfter(err)
+	return ok
+}
+
+func roughly(d time.Duration) string {
+	switch {
+	case d < 2*time.Minute:
+		return "a minute"
+	case d < time.Hour:
+		return fmt.Sprintf("%d minutes", int(d.Minutes()))
+	case d < 90*time.Minute:
+		return "about an hour"
+	default:
+		return fmt.Sprintf("about %d hours", int(d.Hours()+0.5))
 	}
 }
 
