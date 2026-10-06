@@ -897,7 +897,7 @@ body,
 }
 
 .video-badge.ok { color: #3c9d5d; }
-.video-badge.warn { color: #c58b1a; }
+.video-badge.info { color: var(--main-muted); }
 
 @media (max-width: 980px) {
   .mode-switcher {

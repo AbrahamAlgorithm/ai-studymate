@@ -70,7 +70,7 @@ func (h *Handler) Quiz(c *gin.Context) {
 		req.Type = "mixed"
 	}
 
-	contextText, err := h.resolveQuizContext(c, req.Context)
+	contextText, video, err := h.resolveQuizContext(c, req.Context)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -83,6 +83,7 @@ func (h *Handler) Quiz(c *gin.Context) {
 	aiResp, err := h.AI.Chat(c.Request.Context(), ai.ChatRequest{
 		System:   quizSystemPrompt,
 		Messages: []ai.Message{{Role: "user", Content: buildQuizPrompt(req.Topic, req.Count, req.Difficulty, req.Type, contextText)}},
+		Video:    video,
 		JSON:     true,
 	})
 	if err != nil {
@@ -110,15 +111,16 @@ func clamp(v, lo, hi, fallback int) int {
 	return min(max(v, lo), hi)
 }
 
-func (h *Handler) resolveQuizContext(c *gin.Context, qc *quizContext) (string, error) {
+// returns the context as text, or a video for gemini to watch when the captions can't be read
+func (h *Handler) resolveQuizContext(c *gin.Context, qc *quizContext) (string, *ai.Video, error) {
 	if qc == nil || strings.TrimSpace(qc.Content) == "" {
-		return "", nil
+		return "", nil, nil
 	}
 	content := strings.TrimSpace(qc.Content)
 
 	switch qc.Type {
 	case "text":
-		return truncateRunes(content, extract.MaxDocumentChars), nil
+		return truncateRunes(content, extract.MaxDocumentChars), nil, nil
 
 	case "url":
 		if _, err := youtube.ExtractVideoID(content); err == nil {
@@ -127,37 +129,37 @@ func (h *Handler) resolveQuizContext(c *gin.Context, qc *quizContext) (string, e
 		page, err := extract.URL(c.Request.Context(), content)
 		if err != nil {
 			log.Printf("[quiz] url context: %v", err)
-			return "", errors.New("Couldn't read that web page. Check the link or paste the text instead.")
+			return "", nil, errors.New("Couldn't read that web page. Check the link or paste the text instead.")
 		}
-		return fmt.Sprintf("Source: %s\n\n%s", page.Title, page.Content), nil
+		return fmt.Sprintf("Source: %s\n\n%s", page.Title, page.Content), nil, nil
 
 	case "youtube":
 		videoID, err := youtube.ExtractVideoID(content)
 		if err != nil {
-			return "", errors.New("That doesn't look like a YouTube video link.")
+			return "", nil, errors.New("That doesn't look like a YouTube video link.")
 		}
 		_, segs, err := youtube.FetchVideo(c.Request.Context(), videoID)
 		if len(segs) == 0 {
-			log.Printf("[quiz] youtube context: %v", err)
-			return "", errors.New("I can't read the captions on this video, so I can't build a quiz from it. Try a topic instead.")
+			log.Printf("[quiz] no captions for %s, gemini watches it instead: %v", videoID, err)
+			return "The attached YouTube video is the context material.", videoToWatch(videoID, 0), nil
 		}
-		return "YouTube video transcript:\n" + truncateRunes(youtube.TranscriptText(segs), maxTranscriptChar), nil
+		return "YouTube video transcript:\n" + truncateRunes(youtube.TranscriptText(segs), maxTranscriptChar), nil, nil
 
 	case "document":
 		data, err := base64.StdEncoding.DecodeString(content)
 		if err != nil {
-			return "", errors.New("The document has to be base64 encoded.")
+			return "", nil, errors.New("The document has to be base64 encoded.")
 		}
 		if text, err := extract.PDF(data); err == nil {
-			return text, nil
+			return text, nil, nil
 		}
 		if utf8.Valid(data) {
-			return truncateRunes(string(data), extract.MaxDocumentChars), nil
+			return truncateRunes(string(data), extract.MaxDocumentChars), nil, nil
 		}
-		return "", errors.New("Couldn't read any text from that document. Upload it in Handout mode instead.")
+		return "", nil, errors.New("Couldn't read any text from that document. Upload it in Handout mode instead.")
 	}
 
-	return "", fmt.Errorf("unknown context type %q", qc.Type)
+	return "", nil, fmt.Errorf("unknown context type %q", qc.Type)
 }
 
 func buildQuizPrompt(topic string, count int, difficulty, qtype, context string) string {

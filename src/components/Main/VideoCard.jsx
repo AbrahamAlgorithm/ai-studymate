@@ -28,10 +28,10 @@ const VideoCard = ({ video }) => {
                     {video.title || 'YouTube video'}
                 </a>
                 {video.channel && <p className="video-channel">{video.channel}</p>}
-                <p className={`video-badge ${video.transcriptAvailable ? 'ok' : 'warn'}`}>
+                <p className={`video-badge ${video.transcriptAvailable ? 'ok' : 'info'}`}>
                     {video.transcriptAvailable
                         ? 'Transcript loaded, answers come from the video'
-                        : 'No captions on this one, answers use the title and description'}
+                        : "Couldn't get the captions, so StudyMate watches the video itself (a little slower)"}
                 </p>
             </div>
         </div>

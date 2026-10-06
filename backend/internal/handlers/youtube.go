@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"studymate/backend/internal/ai"
@@ -67,7 +68,10 @@ type youtubeAskRequest struct {
 	History     []ai.Message                `json:"history"`
 }
 
-var timestampInText = regexp.MustCompile(`\b(\d{1,2}:\d{2}(?::\d{2})?)\b`)
+var (
+	timestampInText = regexp.MustCompile(`\b(\d{1,2}:\d{2}(?::\d{2})?)\b`)
+	videoIDPattern  = regexp.MustCompile(`^[A-Za-z0-9_-]{11}$`)
+)
 
 func (h *Handler) YoutubeAsk(c *gin.Context) {
 	var req youtubeAskRequest
@@ -77,6 +81,10 @@ func (h *Handler) YoutubeAsk(c *gin.Context) {
 	question := truncateRunes(strings.TrimSpace(req.Question), maxQuestionChars)
 	if question == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Question cannot be empty."})
+		return
+	}
+	if !videoIDPattern.MatchString(req.VideoID) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "That doesn't look like a YouTube video."})
 		return
 	}
 
@@ -90,7 +98,24 @@ func (h *Handler) YoutubeAsk(c *gin.Context) {
 	userTurn := buildVideoContext(req, focus) + "\n\nQUESTION: " + question
 	messages := append(sanitizeHistory(req.History), ai.Message{Role: "user", Content: userTurn})
 
-	h.answer(c, ai.ChatRequest{System: systemPromptForMode("youtube"), Messages: messages})
+	chat := ai.ChatRequest{System: systemPromptForMode("youtube"), Messages: messages}
+	if len(req.Transcript) == 0 {
+		// no captions (youtube blocks us now and then), so gemini watches the video itself
+		chat.Video = videoToWatch(req.VideoID, focus)
+	}
+	h.answer(c, chat)
+}
+
+// a timestamp question only needs a few minutes around it, anything else gets the whole video at a low frame rate
+func videoToWatch(videoID string, focus float64) *ai.Video {
+	v := &ai.Video{URL: "https://www.youtube.com/watch?v=" + videoID}
+	if focus > 0 {
+		v.Start = time.Duration(max(0, focus-90) * float64(time.Second))
+		v.End = time.Duration((focus + 90) * float64(time.Second))
+		return v
+	}
+	v.FPS = 0.1
+	return v
 }
 
 func buildVideoContext(req youtubeAskRequest, focus float64) string {
@@ -123,14 +148,19 @@ func buildVideoContext(req youtubeAskRequest, focus float64) string {
 		return sb.String()
 	}
 
-	// no captions, so make sure the model doesn't pretend it watched the video
 	if req.Description != "" {
 		sb.WriteString("\nVIDEO DESCRIPTION:\n")
 		sb.WriteString(truncateRunes(req.Description, 4000))
 		sb.WriteString("\n")
 	}
-	sb.WriteString("\nNOTE: No transcript is available for this video, so you cannot see what is said in it. " +
-		"Answer from the title, description and your general knowledge of the topic, say clearly that you are " +
-		"doing so, and don't invent timestamps or claim to quote the video.")
+	if focus > 0 {
+		from, to := max(0, int(focus)-90), int(focus)+90
+		fmt.Fprintf(&sb, "\nNo transcript was available, so you're watching the video itself, the part from %s to %s. "+
+			"Answer from what is shown and said there and cite timestamps from the full video.",
+			youtube.FormatTimestamp(from), youtube.FormatTimestamp(to))
+	} else {
+		sb.WriteString("\nNo transcript was available, so you're watching the video itself. " +
+			"Answer from what is shown and said in it and cite timestamps.")
+	}
 	return sb.String()
 }

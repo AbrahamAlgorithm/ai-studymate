@@ -36,7 +36,7 @@ Browser (React + Vite)
 - Study history is cached in the browser by Firestore, so it shows up straight away on refresh and works offline.
 - Answers stream in as they're written, so the first words show up in about a second.
 - If the main model is overloaded or retired, requests fall back to the next model in the list instead of failing.
-- YouTube transcripts come from the same player api the YouTube app uses. YouTube sometimes blocks that from cloud servers, in which case answers fall back to the video's title and description.
+- YouTube transcripts come from the same player api the YouTube app uses. When YouTube blocks that (it does now and then, and a lot from cloud servers), Gemini watches the video itself instead: just the few minutes around a timestamp question, or the whole video at a low frame rate. The free tier allows 8 hours of YouTube video a day for this.
 
 **Stack:** React 18, Vite, MUI, react-markdown + KaTeX · Go 1.26, Gin, Google Gen AI SDK · Firebase Auth + Firestore · Docker, Cloud Run, GitHub Actions.
 

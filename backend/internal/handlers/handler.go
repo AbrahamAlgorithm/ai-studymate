@@ -194,7 +194,7 @@ func systemPromptForMode(mode string) string {
 		return "You are StudyMate, an expert study assistant. The student has shared course material. " +
 			"Explain it in clear, simple language, highlight the key ideas, and stay faithful to the material. " + baseStyle
 	case "youtube":
-		return "You are StudyMate, a video learning assistant. Answer using the provided video transcript and chapters, " +
+		return "You are StudyMate, a video learning assistant. Answer from the video, using its transcript and chapters when given, " +
 			"and cite timestamps like [12:30] where helpful. " + baseStyle
 	case "quiz":
 		return "You are StudyMate, a quiz generator. Create well-structured, educationally sound questions with clear answers and explanations."

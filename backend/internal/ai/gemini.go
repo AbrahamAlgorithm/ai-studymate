@@ -25,8 +25,9 @@ const busyCooldown = time.Minute
 
 // how long a model gets to start answering before i give up on it, busy models can take ages just to say they're busy
 const (
-	firstChunkWait    = 8 * time.Second
-	firstChunkWaitBig = 20 * time.Second // long transcripts and files take longer to read
+	firstChunkWait      = 8 * time.Second
+	firstChunkWaitBig   = 20 * time.Second // long transcripts and files take longer to read
+	firstChunkWaitVideo = 90 * time.Second // watching a whole video took ~20s in testing, give it room
 )
 
 var errSlowStart = errors.New("no answer in time")
@@ -45,7 +46,15 @@ type ChatRequest struct {
 	System     string
 	Messages   []Message
 	Attachment *Attachment // goes with the last user message
+	Video      *Video      // a public youtube video gemini watches itself, also with the last user message
 	JSON       bool
+}
+
+// Start/End clip it, FPS samples it, zero means leave it to gemini
+type Video struct {
+	URL        string
+	Start, End time.Duration
+	FPS        float64
 }
 
 type ChatResponse struct {
@@ -163,6 +172,9 @@ func (g *Gemini) firstChunkWait(req ChatRequest) time.Duration {
 	for _, m := range req.Messages {
 		size += len(m.Content)
 	}
+	if req.Video != nil {
+		return firstChunkWaitVideo
+	}
 	if req.Attachment != nil || size > 60000 {
 		return firstChunkWaitBig
 	}
@@ -222,10 +234,25 @@ func buildContents(req ChatRequest) []*genai.Content {
 		if i == len(req.Messages)-1 && req.Attachment != nil {
 			parts = append(parts, genai.NewPartFromBytes(req.Attachment.Data, req.Attachment.MimeType))
 		}
+		if i == len(req.Messages)-1 && req.Video != nil {
+			parts = append(parts, videoPart(req.Video))
+		}
 		parts = append(parts, genai.NewPartFromText(msg.Content))
 		contents = append(contents, genai.NewContentFromParts(parts, role))
 	}
 	return contents
+}
+
+func videoPart(v *Video) *genai.Part {
+	part := genai.NewPartFromURI(v.URL, "video/*")
+	if v.Start > 0 || v.End > 0 || v.FPS > 0 {
+		part.VideoMetadata = &genai.VideoMetadata{StartOffset: v.Start, EndOffset: v.End}
+		if v.FPS > 0 {
+			fps := v.FPS
+			part.VideoMetadata.FPS = &fps
+		}
+	}
+	return part
 }
 
 func (g *Gemini) config(req ChatRequest, model string) *genai.GenerateContentConfig {
@@ -235,6 +262,9 @@ func (g *Gemini) config(req ChatRequest, model string) *genai.GenerateContentCon
 	}
 	if req.JSON {
 		config.ResponseMIMEType = "application/json"
+	}
+	if req.Video != nil {
+		config.MediaResolution = genai.MediaResolutionLow // a third of the tokens and it still reads slides fine
 	}
 	if strings.HasPrefix(model, "gemini-3") {
 		config.ThinkingConfig = &genai.ThinkingConfig{ThinkingLevel: g.thinking}

@@ -276,9 +276,12 @@ func TestYoutubeAskFocusesOnTimestamp(t *testing.T) {
 	if !strings.Contains(c, "derivation") || strings.Contains(c, "intro") || strings.Contains(c, "outro") {
 		t.Errorf("transcript not windowed around 10:00: %q", c)
 	}
+	if f.last.Video != nil {
+		t.Error("with a transcript there's no need to send the video")
+	}
 }
 
-func TestYoutubeAskWithoutTranscriptIsHonest(t *testing.T) {
+func TestYoutubeWithoutTranscriptWatchesTheVideo(t *testing.T) {
 	f := &fakeAI{reply: "ok"}
 	r := newTestRouter(New(f))
 	w, _ := postJSON(t, r, "/youtube/ask", map[string]any{
@@ -287,8 +290,30 @@ func TestYoutubeAskWithoutTranscriptIsHonest(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d", w.Code)
 	}
-	if c := f.last.Messages[0].Content; !strings.Contains(c, "No transcript is available") {
-		t.Errorf("missing no-transcript note: %q", c)
+	v := f.last.Video
+	if v == nil || v.URL != "https://www.youtube.com/watch?v=dQw4w9WgXcQ" || v.FPS != 0.1 || v.Start != 0 || v.End != 0 {
+		t.Fatalf("expected the whole video at a low frame rate, got %+v", v)
+	}
+	if c := f.last.Messages[0].Content; !strings.Contains(c, "watching the video itself") {
+		t.Errorf("model isn't told it's watching the video: %q", c)
+	}
+}
+
+func TestYoutubeWithoutTranscriptClipsAroundTimestamp(t *testing.T) {
+	f := &fakeAI{reply: "ok"}
+	r := newTestRouter(New(f))
+	postJSON(t, r, "/youtube/ask", map[string]any{"videoId": "dQw4w9WgXcQ", "title": "x", "question": "what happens at 12:30?"})
+	v := f.last.Video
+	if v == nil || v.Start != 660*time.Second || v.End != 840*time.Second || v.FPS != 0 {
+		t.Fatalf("expected an 11:00-14:00 clip, got %+v", v)
+	}
+}
+
+func TestYoutubeAskRejectsBadVideoID(t *testing.T) {
+	r := newTestRouter(New(&fakeAI{reply: "ok"}))
+	w, _ := postJSON(t, r, "/youtube/ask", map[string]any{"videoId": "../../evil/x", "question": "hi"})
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", w.Code)
 	}
 }
 
@@ -391,4 +416,25 @@ func TestQuotaMessageSaysWhenItComesBack(t *testing.T) {
 	if w.Code != http.StatusTooManyRequests || !strings.Contains(out["error"].(string), "about 2 hours") {
 		t.Fatalf("status = %d, body = %v", w.Code, out)
 	}
+}
+
+// youtube blocked the captions, so gemini watches the clip itself. run with: YOUTUBE_LIVE=1 go test ./internal/handlers -run LiveYoutube -v (needs GEMINI_API_KEY)
+func TestLiveYoutubeWithoutCaptions(t *testing.T) {
+	key := os.Getenv("GEMINI_API_KEY")
+	if key == "" || os.Getenv("YOUTUBE_LIVE") == "" {
+		t.Skip("needs GEMINI_API_KEY and YOUTUBE_LIVE=1")
+	}
+	g, err := ai.NewGemini(context.Background(), ai.Config{APIKey: key, Model: os.Getenv("GEMINI_MODEL"), Fallbacks: ai.DefaultFallbacks})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := newTestRouter(New(g))
+	start := time.Now()
+	w, out := postJSON(t, r, "/youtube/ask", map[string]any{
+		"videoId": "SE2KF-vxvS0", "title": "System Design for Beginners (2026)", "question": "What happens at 12:30?",
+	})
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s", w.Code, w.Body)
+	}
+	t.Logf("answered by %v in %s: %.300s", out["model"], time.Since(start).Round(time.Millisecond), out["response"])
 }

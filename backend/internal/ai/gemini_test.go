@@ -181,6 +181,27 @@ func TestNotConfigured(t *testing.T) {
 	}
 }
 
+func TestVideoGoesWithTheLastMessage(t *testing.T) {
+	req := ChatRequest{
+		Messages: []Message{{Role: "user", Content: "what happens at 12:30?"}},
+		Video:    &Video{URL: "https://www.youtube.com/watch?v=SE2KF-vxvS0", Start: 660 * time.Second, End: 840 * time.Second},
+	}
+	parts := buildContents(req)[0].Parts
+	if len(parts) != 2 || parts[0].FileData == nil || parts[0].FileData.FileURI != req.Video.URL {
+		t.Fatalf("expected the video part first, got %+v", parts)
+	}
+	if vm := parts[0].VideoMetadata; vm == nil || vm.StartOffset != 660*time.Second || vm.EndOffset != 840*time.Second || vm.FPS != nil {
+		t.Errorf("clip offsets not set right: %+v", vm)
+	}
+	g := &Gemini{thinking: genai.ThinkingLevelMinimal}
+	if c := g.config(req, "gemini-3.5-flash"); c.MediaResolution != genai.MediaResolutionLow {
+		t.Errorf("videos should use low media resolution, got %q", c.MediaResolution)
+	}
+	if w := g.firstChunkWait(req); w != firstChunkWaitVideo {
+		t.Errorf("watching a video needs the longer wait, got %s", w)
+	}
+}
+
 // hits the real API, run it with: go test ./internal/ai -run Live -v (needs GEMINI_API_KEY)
 func TestGeminiLive(t *testing.T) {
 	key := os.Getenv("GEMINI_API_KEY")
