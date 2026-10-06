@@ -1,0 +1,103 @@
+.page {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--main-bg);
+  color: var(--main-text);
+}
+
+.page-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.page-inner {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 40px 24px 72px;
+}
+
+.page-header {
+  margin-bottom: 28px;
+}
+
+.page-title {
+  font-size: clamp(1.9rem, 4vw, 2.7rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+}
+
+.page-subtitle {
+  margin-top: 10px;
+  max-width: 560px;
+  color: var(--main-muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.panel {
+  background: var(--main-surface);
+  border: 1px solid var(--main-border);
+  border-radius: 16px;
+  padding: 20px;
+  min-width: 0;
+}
+
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-head h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.panel-note {
+  font-size: 0.78rem;
+  color: var(--main-muted);
+}
+
+.pill-btn {
+  border: 1px solid var(--main-border-strong);
+  background: transparent;
+  color: var(--main-text);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pill-btn:hover,
+.pill-btn:focus-visible {
+  background: var(--main-text);
+  color: var(--main-bg);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 760px) {
+  .page-inner {
+    padding: 24px 16px 56px;
+  }
+}

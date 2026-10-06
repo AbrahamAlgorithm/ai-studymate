@@ -1,4 +1,4 @@
-import { Suspense, lazy, useContext, useState } from 'react'
+import { Suspense, lazy, useContext, useEffect, useState } from 'react'
 import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom'
 import Landing from './components/Landing/Landing'
 import { Context } from './context/Context'
@@ -10,10 +10,13 @@ const Main = lazy(() => import('./components/Main/Main'))
 const Signin = lazy(() => import('./components/Auth/Signin'))
 const Signup = lazy(() => import('./components/Auth/Signup'))
 const Contact = lazy(() => import('./components/Contact/Contact'))
-const LearningTips = lazy(() => import('./components/LearningTips/LearningTips'))
-const Progress = lazy(() => import('./components/Progress/Progress'))
+const loadTips = () => import('./components/LearningTips/LearningTips')
+const loadProgress = () => import('./components/Progress/Progress')
+const LearningTips = lazy(loadTips)
+const Progress = lazy(loadProgress)
 
-const Home = () => {
+// sidebar + whichever page, the same component on every app route so the sidebar never remounts
+const Workspace = ({ page: Page }) => {
   const { themeMode } = useContext(Context)
 
   // remember the sidebar state across refreshes
@@ -31,10 +34,21 @@ const Home = () => {
     })
   }
 
+  // fetch the other pages in the background so switching to them doesn't wait on a download
+  useEffect(() => {
+    const id = setTimeout(() => { loadTips(); loadProgress() }, 1500)
+    return () => clearTimeout(id)
+  }, [])
+
+  // the suspense boundaries sit here, not around the routes, so loading a page never remounts the sidebar
   return (
     <div className={`home-container theme-${themeMode}`}>
-      <Sidebar isOpen={sidebarOpen} onClose={toggleSidebar} />
-      <Main onOpenSidebar={toggleSidebar} />
+      <Suspense fallback={null}>
+        <Sidebar isOpen={sidebarOpen} onClose={toggleSidebar} />
+      </Suspense>
+      <Suspense fallback={<div className="page-loading" />}>
+        <Page onOpenSidebar={toggleSidebar} />
+      </Suspense>
     </div>
   )
 };
@@ -77,9 +91,9 @@ const App = () => {
           <Route path="/contact" element={<Contact />} />
           <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
           <Route path="/signin" element={<PublicRoute><Signin /></PublicRoute>} />
-          <Route path="/chat" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path="/learning-tips" element={<ProtectedRoute><LearningTips /></ProtectedRoute>} />
-          <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
+          <Route path="/chat" element={<ProtectedRoute><Workspace page={Main} /></ProtectedRoute>} />
+          <Route path="/learning-tips" element={<ProtectedRoute><Workspace page={LearningTips} /></ProtectedRoute>} />
+          <Route path="/progress" element={<ProtectedRoute><Workspace page={Progress} /></ProtectedRoute>} />
         </Routes>
         </Suspense>
       </Router>

@@ -1,9 +1,27 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import { fileURLToPath } from 'node:url'
+
+// dev only, the go server does this in production. reads just these two values out of backend/.env
+const firebaseConfig = () => ({
+  name: 'firebase-config',
+  apply: 'serve',
+  transformIndexHtml() {
+    const backendDir = fileURLToPath(new URL('./backend', import.meta.url))
+    const env = loadEnv('development', backendDir, ['FIREBASE_PROJECT_ID', 'FIREBASE_WEB_API_KEY'])
+    if (!env.FIREBASE_WEB_API_KEY) return
+    const config = {
+      apiKey: env.FIREBASE_WEB_API_KEY,
+      authDomain: `${env.FIREBASE_PROJECT_ID}.firebaseapp.com`,
+      projectId: env.FIREBASE_PROJECT_ID,
+    }
+    return [{ tag: 'script', injectTo: 'head-prepend', children: `window.__FIREBASE_CONFIG__ = ${JSON.stringify(config).replace(/</g, '\\u003c')}` }]
+  },
+})
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), firebaseConfig()],
   build: {
     rollupOptions: {
       output: {

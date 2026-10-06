@@ -1,6 +1,8 @@
 package static
 
 import (
+	"bytes"
+	"io"
 	"net/http"
 	"os"
 	"path"
@@ -15,8 +17,9 @@ func Exists(dir string) bool {
 	return err == nil && !info.IsDir()
 }
 
-// real files get served as is, anything else gets index.html so routes like /chat work on refresh
-func SPA(dir string) gin.HandlerFunc {
+// real files get served as is, anything else gets index.html so routes like /chat work on refresh.
+// head goes into index.html's <head>, that's how the browser gets its firebase settings without them being in the repo
+func SPA(dir, head string) gin.HandlerFunc {
 	root := http.Dir(dir)
 	fileServer := http.FileServer(root)
 
@@ -49,23 +52,25 @@ func SPA(dir string) gin.HandlerFunc {
 		}
 
 		// never cache index.html or people won't see new deploys
-		serveIndex(c, root)
+		serveIndex(c, root, head)
 	}
 }
 
-func serveIndex(c *gin.Context, root http.FileSystem) {
+func serveIndex(c *gin.Context, root http.FileSystem, head string) {
 	f, err := root.Open("/index.html")
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
 	defer f.Close()
-	info, err := f.Stat()
+	page, err := io.ReadAll(f)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "unavailable"})
 		return
 	}
+	if head != "" {
+		page = bytes.Replace(page, []byte("</head>"), []byte(head+"</head>"), 1)
+	}
 	c.Header("Cache-Control", "no-cache")
-	c.Header("Content-Type", "text/html; charset=utf-8")
-	http.ServeContent(c.Writer, c.Request, "index.html", info.ModTime(), f)
+	c.Data(http.StatusOK, "text/html; charset=utf-8", page)
 }

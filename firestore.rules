@@ -1,16 +1,16 @@
 rules_version = '2';
 
-// paste this into firebase console > firestore > rules
+// lives in the shared my-portfolio-492519 database, so every studymate collection is prefixed
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // people only get to touch their own history
-    match /users/{uid}/{document=**} {
+    match /studymate_users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
     // anyone can send a contact message, nobody can read them from the app
-    match /contact_messages/{id} {
+    match /studymate_contact/{id} {
       allow create: if request.resource.data.keys().hasOnly(['firstName', 'lastName', 'email', 'message', 'createdAt'])
         && request.resource.data.firstName is string && request.resource.data.firstName.size() <= 100
         && request.resource.data.lastName is string && request.resource.data.lastName.size() <= 100
@@ -21,7 +21,7 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
-    // everything else is locked
+    // everything else stays locked, the other apps in this project go through their own servers
     match /{document=**} {
       allow read, write: if false;
     }

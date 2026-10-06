@@ -1,118 +1,67 @@
-.learning-tips {
-  min-height: 100vh;
-  padding: 40px 24px;
-  display: flex;
-  flex-direction: column;
-}
-
-.tips-dark {
-  background: #111111;
-  color: #fafafa;
-}
-
-.tips-light {
-  background: #fafafa;
-  color: #111111;
-}
-
-.tips-header {
-  max-width: 1200px;
-  margin: 0 auto 40px;
-  width: 100%;
-}
-
-.back-btn {
-  background: none;
-  border: none;
-  color: #8ec7ff;
-  font-size: 0.95rem;
-  cursor: pointer;
-  margin-bottom: 16px;
-  padding: 0;
-  font-weight: 500;
-}
-
-.back-btn:hover {
-  text-decoration: underline;
-}
-
-.tips-header h1 {
-  font-size: 2.2rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  margin-bottom: 12px;
-}
-
-.tips-header p {
-  font-size: 1rem;
-  opacity: 0.75;
-}
-
 .tips-grid {
-  max-width: 1200px;
-  margin: 0 auto;
-  width: 100%;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .tip-card {
-  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 230px;
+  padding: 22px 20px 20px;
+  background: var(--main-surface);
+  border: 1px solid var(--main-border);
   border-radius: 16px;
-  transition: all 0.2s ease;
-}
-
-.tips-dark .tip-card {
-  background: #151515;
-  border: 1px solid rgba(250, 250, 250, 0.12);
-}
-
-.tips-light .tip-card {
-  background: #f2f2f2;
-  border: 1px solid rgba(17, 17, 17, 0.16);
+  transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
 .tip-card:hover {
-  transform: translateY(-2px);
+  border-color: var(--main-border-strong);
+  transform: translateY(-1px);
 }
 
-.tips-dark .tip-card:hover {
-  border-color: rgba(250, 250, 250, 0.32);
+.tip-index {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--main-muted);
 }
 
-.tips-light .tip-card:hover {
-  border-color: rgba(17, 17, 17, 0.35);
-}
-
-.tip-icon {
-  font-size: 2.4rem;
-  margin-bottom: 12px;
-}
-
-.tip-card h2 {
-  font-size: 1.3rem;
+.tip-title {
+  font-size: 1.12rem;
   font-weight: 600;
-  margin-bottom: 10px;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
-.tip-card p {
-  font-size: 0.95rem;
-  line-height: 1.6;
-  opacity: 0.8;
+.tip-body {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--main-muted);
 }
 
-@media (max-width: 760px) {
-  .tips-header h1 {
-    font-size: 1.8rem;
+.tip-card .pill-btn {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.tips-footnote {
+  margin-top: 24px;
+  font-size: 0.82rem;
+  color: var(--main-muted);
+}
+
+@media (max-width: 980px) {
+  .tips-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 
+@media (max-width: 600px) {
   .tips-grid {
     grid-template-columns: 1fr;
   }
 
-  .learning-tips {
-    padding: 24px 16px;
+  .tip-card {
+    min-height: 0;
   }
 }

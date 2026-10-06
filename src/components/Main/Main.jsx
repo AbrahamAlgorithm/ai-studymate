@@ -7,6 +7,7 @@ import useSpeechRecognition from '../../hooks/useSpeechRecognition'
 import MessageContent from './MessageContent'
 import QuizView from './QuizView'
 import VideoCard from './VideoCard'
+import TopBar from '../Shell/TopBar'
 
 const MODE_OPTIONS = [
     { id: 'ask', label: 'Ask & Learn', icon: assets.message_icon },
@@ -51,20 +52,6 @@ const PENDING_LABELS = {
     quiz: 'Writing your quiz…',
 }
 
-const getInitials = (user) => {
-    if (!user) return '?'
-    if (user.displayName) {
-        const parts = user.displayName.trim().split(/\s+/).filter(Boolean)
-        if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-        return parts[0].slice(0, 2).toUpperCase()
-    }
-    if (user.email) {
-        const raw = user.email.split('@')[0].replace(/\d+$/, '')
-        return raw.slice(0, 2).toUpperCase()
-    }
-    return '?'
-}
-
 const getFirstName = (user) => {
     if (user?.displayName) return user.displayName.split(' ')[0]
     if (user?.email) {
@@ -78,7 +65,7 @@ const formatBytes = (n) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} M
 
 const Main = ({ onOpenSidebar }) => {
     const {
-        onSent, stopGenerating, loading, setInput, input, themeMode, currentUser,
+        onSent, stopGenerating, loading, setInput, input, currentUser,
         thread, activeMode, changeMode, activeVideo, quizOptions, setQuizOptions,
         newChat, recordQuizScore,
     } = useContext(Context)
@@ -262,14 +249,11 @@ const Main = ({ onOpenSidebar }) => {
 
     const canSend = !loading && (input.trim() || attachedFile || (activeMode === 'quiz' && quizOptions.source.trim()))
     const activeModeOption = MODE_OPTIONS.find((m) => m.id === activeMode) || MODE_OPTIONS[0]
-    const userInitials = getInitials(currentUser)
-    // same initials always get the same colour
-    const avatarHue = ((userInitials.charCodeAt(0) || 0) * 37 + (userInitials.charCodeAt(1) || 0) * 17) % 360
 
     return (
         <div
             ref={mainRef}
-            className={`main ${themeMode === 'light' ? 'main-light' : 'main-dark'}${dragging ? ' is-dragging' : ''}`}
+            className={`main${dragging ? ' is-dragging' : ''}`}
             onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
             onDragLeave={(e) => { if (e.currentTarget === e.target) setDragging(false) }}
             onDrop={handleDrop}
@@ -282,30 +266,7 @@ const Main = ({ onOpenSidebar }) => {
                 accept={ACCEPTED_UPLOADS}
             />
 
-            <div className="nav">
-                <div className="nav-left">
-                    <button className="hamburger-btn" aria-label="Open menu" onClick={onOpenSidebar}>
-                        <span /><span /><span />
-                    </button>
-                    <button type="button" className="nav-logo" onClick={newChat} title="Back to dashboard">
-                        StudyMate AI
-                    </button>
-                    <span className="nav-chip">{activeModeOption.label}</span>
-                </div>
-                <div className="nav-right">
-                    <div className="user-meta">
-                        <p>{currentUser?.email || 'Guest user'}</p>
-                    </div>
-                    <div
-                        className="user-avatar-initials"
-                        style={{ background: `hsl(${avatarHue},55%,40%)` }}
-                        title={currentUser?.email || 'User'}
-                        aria-label={`User avatar: ${userInitials}`}
-                    >
-                        {userInitials}
-                    </div>
-                </div>
-            </div>
+            <TopBar label={activeModeOption.label} onOpenSidebar={onOpenSidebar} />
 
             <div ref={containerRef} className={`main-container${!showThread ? ' dashboard-mode' : ''}`}>
                 {!showThread ? (

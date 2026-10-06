@@ -1,18 +1,16 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 
-// this config is public on purpose, firestore rules are what protect the data
-const firebaseConfig = {
-  apiKey: "AIzaSyAgcAidLiqWxci-2kMC36_YmuCi1prnT-I",
-  authDomain: "studymate-e4ecb.firebaseapp.com",
-  projectId: "studymate-e4ecb",
-  storageBucket: "studymate-e4ecb.appspot.com",
-  messagingSenderId: "52245784255",
-  appId: "1:52245784255:web:ac67d1e5bdfed5d0c5c80a",
-  measurementId: "G-4E9NP26JRR"
-};
+// the go server (vite in dev) puts this on the page from backend/.env, so it never sits in the repo
+const firebaseConfig = window.__FIREBASE_CONFIG__;
+if (!firebaseConfig?.apiKey) {
+  throw new Error("Firebase config missing, set FIREBASE_PROJECT_ID and FIREBASE_WEB_API_KEY in backend/.env");
+}
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// history also lives in the browser's cache, so it shows up instantly on refresh and survives going offline
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+});

@@ -13,7 +13,7 @@ import (
 
 func TestSPA(t *testing.T) {
 	dir := t.TempDir()
-	must(t, os.WriteFile(filepath.Join(dir, "index.html"), []byte("<html>app</html>"), 0o644))
+	must(t, os.WriteFile(filepath.Join(dir, "index.html"), []byte("<html><head><title>app</title></head></html>"), 0o644))
 	must(t, os.MkdirAll(filepath.Join(dir, "assets"), 0o755))
 	must(t, os.WriteFile(filepath.Join(dir, "assets", "app-abc123.js"), []byte("console.log(1)"), 0o644))
 
@@ -23,16 +23,16 @@ func TestSPA(t *testing.T) {
 
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
-	r.NoRoute(SPA(dir))
+	r.NoRoute(SPA(dir, `<script>window.__FIREBASE_CONFIG__={"apiKey":"k"}</script>`))
 
 	cases := []struct {
 		path, wantBody, wantCache string
 		wantCode                  int
 	}{
-		{"/", "<html>app</html>", "no-cache", 200},
-		{"/chat", "<html>app</html>", "no-cache", 200},
+		{"/", "window.__FIREBASE_CONFIG__", "no-cache", 200},
+		{"/chat", `{"apiKey":"k"}</script></head>`, "no-cache", 200},
 		{"/assets/app-abc123.js", "console.log(1)", "immutable", 200},
-		{"/../../etc/passwd", "<html>app</html>", "no-cache", 200},
+		{"/../../etc/passwd", "<head>", "no-cache", 200},
 		{"/api/nope", `"not found"`, "", 404},
 	}
 	for _, tc := range cases {

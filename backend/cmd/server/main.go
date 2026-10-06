@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -98,7 +99,7 @@ func main() {
 	staticDir := envOr("STATIC_DIR", "./web")
 	if static.Exists(staticDir) {
 		log.Printf("serving frontend from %s", staticDir)
-		r.NoRoute(static.SPA(staticDir))
+		r.NoRoute(static.SPA(staticDir, firebaseWebConfig(projectID)))
 	} else {
 		r.NoRoute(func(c *gin.Context) { c.JSON(http.StatusNotFound, gin.H{"error": "not found"}) })
 	}
@@ -137,6 +138,22 @@ func firebaseOptions() []option.ClientOption {
 	}
 	// verifying id tokens only needs google's public keys, no credentials
 	return []option.ClientOption{option.WithoutAuthentication()}
+}
+
+// the browser's firebase settings, handed over in index.html so they never have to be committed.
+// the key is restricted to studymate's domains and to auth + firestore, so seeing it in the page is fine
+func firebaseWebConfig(projectID string) string {
+	apiKey := os.Getenv("FIREBASE_WEB_API_KEY")
+	if apiKey == "" {
+		log.Print("FIREBASE_WEB_API_KEY is not set, nobody will be able to sign in on the web app")
+		return ""
+	}
+	config, _ := json.Marshal(map[string]string{
+		"apiKey":     apiKey,
+		"authDomain": projectID + ".firebaseapp.com",
+		"projectId":  projectID,
+	})
+	return "<script>window.__FIREBASE_CONFIG__=" + string(config) + "</script>"
 }
 
 func fallbackModels() []string {

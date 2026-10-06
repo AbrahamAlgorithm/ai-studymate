@@ -144,6 +144,15 @@
   line-height: 1.35;
 }
 
+.sidebar .recent-entry:focus {
+  outline: none;
+}
+
+.sidebar .recent-entry:focus-visible {
+  outline: 2px solid var(--side-border);
+  outline-offset: -2px;
+}
+
 .sidebar .recent-entry:hover {
   background-color: var(--side-hover);
 }
@@ -226,9 +235,7 @@
 }
 
 .theme-picker-popup {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 0;
+  position: fixed;
   min-width: 140px;
   border-radius: 10px;
   overflow: hidden;

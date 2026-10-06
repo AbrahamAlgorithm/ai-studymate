@@ -31,7 +31,9 @@ Browser (React + Vite)
 ```
 
 - The Go server also serves the built React app, so it's one container on Cloud Run and the frontend and API share an origin.
-- The Gemini key only lives on the server. The Firebase web config in `src/firebase.js` is public on purpose, the data is protected by [`firestore.rules`](firestore.rules).
+- No keys or Firebase config live in this repo. The Gemini key stays on the server, and the server hands the browser its Firebase settings when it serves the page (Vite does the same in dev), both read from `backend/.env` or the Cloud Run env vars.
+- The browser does get to see the Firebase web key (every Firebase site works that way), so it's restricted: it only works from StudyMate's own domains and only for sign-in and Firestore. The data itself is protected by [`firestore.rules`](firestore.rules).
+- Study history is cached in the browser by Firestore, so it shows up straight away on refresh and works offline.
 - Answers stream in as they're written, so the first words show up in about a second.
 - If the main model is overloaded or retired, requests fall back to the next model in the list instead of failing.
 - YouTube transcripts come from the same player api the YouTube app uses. YouTube sometimes blocks that from cloud servers, in which case answers fall back to the video's title and description.
@@ -47,7 +49,7 @@ git clone https://github.com/AbrahamAlgorithm/aistudymate.git
 cd aistudymate
 npm install
 
-cp backend/.env.example backend/.env   # then add your GEMINI_API_KEY
+cp backend/.env.example backend/.env   # then add GEMINI_API_KEY and FIREBASE_WEB_API_KEY
 npm run dev                            # Go API on :8080 and the app on http://localhost:5173
 ```
 
@@ -58,7 +60,8 @@ npm run dev                            # Go API on :8080 and the app on http://l
 | Variable | Required | Notes |
 |---|---|---|
 | `GEMINI_API_KEY` | yes | |
-| `FIREBASE_PROJECT_ID` | yes | Used to verify users' ID tokens, no service account needed. |
+| `FIREBASE_PROJECT_ID` | yes | `my-portfolio-492519`. Used to verify users' ID tokens, no service account needed. |
+| `FIREBASE_WEB_API_KEY` | yes | The restricted "StudyMate web" key from the Google Cloud console. Passed to the page at runtime, never committed. |
 | `GEMINI_MODEL` | no | Defaults to `gemini-3.5-flash`. |
 | `GEMINI_FALLBACK_MODELS` | no | Comma separated, tried in order when the main model is busy. Defaults to `gemini-3.5-flash-lite,gemini-3.8-flash`. |
 | `GEMINI_THINKING` | no | `minimal`, `low`, `medium` or `high`. Defaults to `minimal`, more thinking means slower answers. |
@@ -89,10 +92,15 @@ gcloud run services update studymate-nau --region us-central1 --project my-portf
   --update-secrets GEMINI_API_KEY=gemini-api-key:latest
 ```
 
-Later deploys keep it. In the Firebase console you also need to:
+Later deploys keep it.
 
-- paste `firestore.rules` into Firestore > Rules and publish it
-- enable **Google** under Authentication > Sign-in method, and add the Cloud Run domain under **Authorized domains**
+Everything lives in the `my-portfolio-492519` project, which other apps share:
+
+- Auth users and the Firestore database are in that project. StudyMate only uses the `studymate_users` and `studymate_contact` collections, and `firestore.rules` locks everything else.
+- The rules are already published. If you change `firestore.rules`, paste it into Firebase console > Firestore > Rules and publish.
+- localhost and both Cloud Run URLs are authorised for sign-in, and Google sign-in is on. If you add a custom domain, add it to Firebase's authorised domains and to the "StudyMate web (restricted)" key's allowed referrers.
+- `FIREBASE_WEB_API_KEY` and `FIREBASE_PROJECT_ID` are set on the Cloud Run service, so deploys keep them.
+- It stays free within the free tiers (Firestore: 50,000 reads and 20,000 writes a day; Auth: 50,000 monthly users). The project has billing on for Cloud Run, so a budget alert is a good idea.
 
 ## Project structure
 

@@ -5,6 +5,7 @@ import {
     deleteDoc,
     doc,
     getDocs,
+    getDocsFromCache,
     orderBy,
     query,
     serverTimestamp,
@@ -15,6 +16,9 @@ import * as api from "../api/client";
 import { auth, db } from "../firebase";
 
 export const Context = createContext();
+
+// the firestore database is shared with my other projects, so studymate keeps to its own collections
+const USERS = "studymate_users";
 
 const YOUTUBE_LINK = /(https?:\/\/)?(www\.|m\.)?(youtube\.com\/(watch\?\S*v=|shorts\/|embed\/|live\/)|youtu\.be\/)[\w-]{11}\S*/i;
 
@@ -40,7 +44,7 @@ const legacyToMarkdown = (text) => {
 const toDate = (value) => (value?.toDate ? value.toDate() : value instanceof Date ? value : null);
 
 const fromDoc = (snap) => {
-    const data = snap.data();
+    const data = snap.data({ serverTimestamps: "estimate" });
     return {
         id: snap.id,
         sessionId: data.sessionId || snap.id,
@@ -92,6 +96,7 @@ const ContextProvider = (props) => {
     const [input, setInput] = useState("");
     const [history, setHistory] = useState([]);
     const [historyLoaded, setHistoryLoaded] = useState(false);
+    const [historyError, setHistoryError] = useState(false);
     const [activeSessionId, setActiveSessionId] = useState(null);
     const [activeMode, setActiveMode] = useState("ask");
     const [activeVideo, setActiveVideo] = useState(null);
@@ -154,17 +159,27 @@ const ContextProvider = (props) => {
         }
 
         let cancelled = false;
+        const mergeIn = (snapshot) => {
+            if (cancelled) return;
+            const loaded = snapshot.docs.map(fromDoc);
+            const loadedIds = new Set(loaded.map((ex) => ex.id));
+            // don't drop anything they asked while this was loading
+            setHistory((prev) => [...loaded, ...prev.filter((ex) => !loadedIds.has(ex.id))]);
+        };
         const loadHistory = async () => {
+            const historyQuery = query(collection(db, USERS, uid, "history"), orderBy("createdAt", "asc"));
             try {
-                const historyRef = collection(db, "users", uid, "history");
-                const snapshot = await getDocs(query(historyRef, orderBy("createdAt", "asc")));
-                if (cancelled) return;
-                const loaded = snapshot.docs.map(fromDoc);
-                const loadedIds = new Set(loaded.map((ex) => ex.id));
-                // don't drop anything they asked while this was loading
-                setHistory((prev) => [...loaded, ...prev.filter((ex) => !loadedIds.has(ex.id))]);
+                // whatever the browser cached shows straight away, the server copy follows
+                mergeIn(await getDocsFromCache(historyQuery));
+            } catch {
+                // nothing cached yet
+            }
+            try {
+                mergeIn(await getDocs(historyQuery));
+                if (!cancelled) setHistoryError(false);
             } catch (error) {
                 console.error("Could not load study history", error);
+                if (!cancelled) setHistoryError(true);
             } finally {
                 if (!cancelled) setHistoryLoaded(true);
             }
@@ -201,7 +216,7 @@ const ContextProvider = (props) => {
         setHistory((prev) => prev.map((ex) => (ex.id === id ? { ...ex, ...patch } : ex)));
 
     // firestore writes only resolve when the server acks them, so i don't await them or the ui hangs offline
-    const exchangeRef = (id) => doc(db, "users", currentUser.uid, "history", id);
+    const exchangeRef = (id) => doc(db, USERS, currentUser.uid, "history", id);
 
     const saveExchange = (id, fields, { create = false } = {}) => {
         if (!currentUser?.uid) return;
@@ -290,7 +305,7 @@ const ContextProvider = (props) => {
         const priorThread = history.filter((ex) => ex.sessionId === sessionId);
         // make the doc id up front so the exchange keeps the same id the whole time
         const exchangeId = currentUser?.uid
-            ? doc(collection(db, "users", currentUser.uid, "history")).id
+            ? doc(collection(db, USERS, currentUser.uid, "history")).id
             : newId();
         const base = {
             sessionId,
@@ -388,6 +403,7 @@ const ContextProvider = (props) => {
     const contextValue = {
         history,
         historyLoaded,
+        historyError,
         sessions,
         thread,
         activeSessionId,

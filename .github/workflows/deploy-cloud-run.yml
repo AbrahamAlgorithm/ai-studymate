@@ -102,7 +102,7 @@ jobs:
             --region "$GCP_REGION" \
             --platform managed \
             --allow-unauthenticated \
-            --update-env-vars FIREBASE_PROJECT_ID=studymate-e4ecb \
+            --update-env-vars FIREBASE_PROJECT_ID=my-portfolio-492519 \
             --memory 512Mi \
             --timeout 300 \
             --max-instances 3 \

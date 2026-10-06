@@ -1,8 +1,9 @@
 import { useState, useContext, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import './Sidebar.css'
 import { assets } from '../../assets/assets'
 import { Context } from '../../context/Context'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 const MODE_ICONS = {
     ask: assets.message_icon,
@@ -19,22 +20,25 @@ const THEME_OPTIONS = [
 
 const Sidebar = ({ isOpen, onClose }) => {
     const navigate = useNavigate()
+    const { pathname } = useLocation()
     const [extended, setExtended] = useState(false)
     const [themePickerOpen, setThemePickerOpen] = useState(false)
+    const [pickerSpot, setPickerSpot] = useState(null)
     const themePickerRef = useRef(null)
+    const popupRef = useRef(null)
 
     const {
         sessions, activeSessionId, newChat, themeMode, themePreference, setThemePreference,
-        loading, openSession, logout, currentUser,
+        loading, openSession, logout, currentUser, historyError,
     } = useContext(Context)
 
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 760
     const showExpanded = extended || (isOpen && isMobile)
 
-    // close the picker on outside click
+    // close the picker on outside click, the popup sits in a portal so it counts as inside too
     useEffect(() => {
         const handler = (e) => {
-            if (themePickerRef.current && !themePickerRef.current.contains(e.target)) {
+            if (!themePickerRef.current?.contains(e.target) && !popupRef.current?.contains(e.target)) {
                 setThemePickerOpen(false)
             }
         }
@@ -49,6 +53,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     const loadSession = (sessionId) => {
         if (loading) return
         openSession(sessionId)
+        if (pathname !== '/chat') navigate('/chat')
         closeOnMobile()
     }
 
@@ -60,7 +65,22 @@ const Sidebar = ({ isOpen, onClose }) => {
 
     const handleNewChat = () => {
         newChat()
+        if (pathname !== '/chat') navigate('/chat')
         closeOnMobile()
+    }
+
+    const goTo = (path) => {
+        navigate(path)
+        closeOnMobile()
+    }
+
+    // the collapsed sidebar is too narrow for the menu, so it's placed on the page instead of inside the sidebar
+    const toggleThemePicker = () => {
+        if (!themePickerOpen && themePickerRef.current) {
+            const r = themePickerRef.current.getBoundingClientRect()
+            setPickerSpot({ left: r.left, bottom: window.innerHeight - r.top + 8 })
+        }
+        setThemePickerOpen((prev) => !prev)
     }
 
     const sidebarClass = [
@@ -103,7 +123,9 @@ const Sidebar = ({ isOpen, onClose }) => {
                         <div className="recent">
                             <p className="recent-title">Recent Sessions</p>
                             {sessions.length === 0 && (
-                                <p className="recent-empty">No sessions yet.</p>
+                                <p className="recent-empty">
+                                    {historyError ? "Couldn't load your history right now." : 'No sessions yet.'}
+                                </p>
                             )}
                             {sessions.map((session) => (
                                 <div
@@ -129,9 +151,9 @@ const Sidebar = ({ isOpen, onClose }) => {
 
                 <div className="bottom">
                     <div
-                        className="bottom-item recent-entry"
-                        onClick={() => navigate('/progress')}
-                        onKeyDown={(e) => e.key === 'Enter' && navigate('/progress')}
+                        className={`bottom-item recent-entry${pathname === '/progress' ? ' recent-active' : ''}`}
+                        onClick={() => goTo('/progress')}
+                        onKeyDown={(e) => e.key === 'Enter' && goTo('/progress')}
                         title="Your progress"
                         role="button"
                         tabIndex={0}
@@ -141,9 +163,9 @@ const Sidebar = ({ isOpen, onClose }) => {
                     </div>
 
                     <div
-                        className="bottom-item recent-entry"
-                        onClick={() => navigate('/learning-tips')}
-                        onKeyDown={(e) => e.key === 'Enter' && navigate('/learning-tips')}
+                        className={`bottom-item recent-entry${pathname === '/learning-tips' ? ' recent-active' : ''}`}
+                        onClick={() => goTo('/learning-tips')}
+                        onKeyDown={(e) => e.key === 'Enter' && goTo('/learning-tips')}
                         title="Study techniques"
                         role="button"
                         tabIndex={0}
@@ -155,15 +177,19 @@ const Sidebar = ({ isOpen, onClose }) => {
                     <div className="theme-picker-wrap" ref={themePickerRef}>
                         <div
                             className={`bottom-item recent-entry${themePickerOpen ? ' theme-row-active' : ''}`}
-                            onClick={() => setThemePickerOpen(prev => !prev)}
+                            onClick={toggleThemePicker}
                             title="Theme"
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => e.key === 'Enter' && toggleThemePicker()}
                         >
                             <img className="ui-icon" src={assets.setting_icon} alt="" />
                             {showExpanded && <p>Theme</p>}
                         </div>
 
-                        {themePickerOpen && (
-                            <div className="theme-picker-popup">
+                        {themePickerOpen && pickerSpot && createPortal(
+                            <div className={themeMode === 'light' ? 'sidebar-light' : 'sidebar-dark'}>
+                            <div className="theme-picker-popup" ref={popupRef} style={pickerSpot}>
                                 {THEME_OPTIONS.map(opt => (
                                     <button
                                         key={opt.value}
@@ -182,6 +208,8 @@ const Sidebar = ({ isOpen, onClose }) => {
                                     </button>
                                 ))}
                             </div>
+                            </div>,
+                            document.body
                         )}
                     </div>
 

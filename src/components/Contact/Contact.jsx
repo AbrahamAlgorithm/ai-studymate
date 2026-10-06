@@ -35,7 +35,7 @@ const Contact = () => {
     setIsSubmitting(true)
 
     try {
-      await addDoc(collection(db, 'contact_messages'), {
+      await addDoc(collection(db, 'studymate_contact'), {
         firstName: formData.firstName.trim().slice(0, 100),
         lastName: formData.lastName.trim().slice(0, 100),
         email: formData.email.trim().slice(0, 200),
