@@ -12,11 +12,9 @@ import (
 	"time"
 )
 
-// ErrBlockedAddress is returned when a URL resolves to a non-public address.
 var ErrBlockedAddress = errors.New("destination address is not allowed")
 
-// blockedPrefixes are ranges that are public-looking but must never be reached
-// from user-supplied URLs (carrier-grade NAT, benchmarking, etc.).
+// ranges that look public but still shouldn't be reachable from a pasted link
 var blockedPrefixes = []netip.Prefix{
 	netip.MustParsePrefix("100.64.0.0/10"),
 	netip.MustParsePrefix("192.0.0.0/24"),
@@ -24,9 +22,6 @@ var blockedPrefixes = []netip.Prefix{
 	netip.MustParsePrefix("64:ff9b::/96"),
 }
 
-// IsPublicAddr reports whether addr is safe to connect to from a server
-// fetching user-supplied URLs (i.e. not loopback, private, link-local such as
-// the cloud metadata server, multicast, or otherwise reserved).
 func IsPublicAddr(addr netip.Addr) bool {
 	addr = addr.Unmap()
 	if !addr.IsValid() ||
@@ -47,8 +42,7 @@ func IsPublicAddr(addr netip.Addr) bool {
 	return true
 }
 
-// safeControl runs after DNS resolution, right before each connection is made,
-// so it also covers redirects and DNS-rebinding tricks.
+// runs on the resolved ip right before connecting, so redirects and dns tricks can't reach the metadata server
 func safeControl(_, address string, _ syscall.RawConn) error {
 	host, port, err := net.SplitHostPort(address)
 	if err != nil {
@@ -64,7 +58,6 @@ func safeControl(_, address string, _ syscall.RawConn) error {
 	return nil
 }
 
-// SafeClient is an HTTP client for fetching untrusted, user-supplied URLs.
 var SafeClient = &http.Client{
 	Timeout: 15 * time.Second,
 	Transport: &http.Transport{
@@ -86,7 +79,6 @@ var SafeClient = &http.Client{
 	},
 }
 
-// ValidateURL checks that rawURL is an absolute http(s) URL.
 func ValidateURL(rawURL string) (*url.URL, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
@@ -108,7 +100,6 @@ func validateScheme(u *url.URL) error {
 	return nil
 }
 
-// newRequest builds a GET request for a validated URL.
 func newRequest(ctx context.Context, u *url.URL) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {

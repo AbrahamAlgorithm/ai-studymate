@@ -8,13 +8,10 @@ import (
 	"github.com/ledongthuc/pdf"
 )
 
-// MaxDocumentChars caps extracted document text so prompts stay within model limits.
 const MaxDocumentChars = 150000
 
-// PDF extracts plain text from a PDF file's raw bytes.
-// It reads every page and concatenates the text content.
 func PDF(data []byte) (text string, err error) {
-	// The pdf library panics on some malformed files; treat that as "no text".
+	// the pdf lib panics on some broken files, treat that as no text
 	defer func() {
 		if r := recover(); r != nil {
 			text, err = "", fmt.Errorf("unreadable pdf: %v", r)
@@ -34,8 +31,7 @@ func PDF(data []byte) (text string, err error) {
 		}
 		pageText, err := page.GetPlainText(nil)
 		if err != nil {
-			// Skip pages that fail; don't abort the whole document.
-			continue
+			continue // one bad page shouldn't kill the whole document
 		}
 		sb.WriteString(pageText)
 		sb.WriteString("\n")

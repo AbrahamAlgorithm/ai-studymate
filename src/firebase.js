@@ -1,12 +1,8 @@
-// src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// Firebase web config is public by design — it identifies the project, it is
-// not a secret. Data is protected by Firestore security rules (firestore.rules)
-// and the authorised domains list in the Firebase console. The AI provider keys
-// live only on the server (backend/), never in this bundle.
+// this config is public on purpose, firestore rules are what protect the data
 const firebaseConfig = {
   apiKey: "AIzaSyAgcAidLiqWxci-2kMC36_YmuCi1prnT-I",
   authDomain: "studymate-e4ecb.firebaseapp.com",

@@ -9,9 +9,7 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// RateLimiter limits requests per authenticated user. State is in-memory,
-// so on Cloud Run the limit applies per instance — enough to stop a single
-// account from burning through the AI quota.
+// in memory, so on cloud run it's per instance, still enough to stop one account draining the quota
 type RateLimiter struct {
 	mu       sync.Mutex
 	limiters map[string]*userLimiter
@@ -24,7 +22,6 @@ type userLimiter struct {
 	lastSeen time.Time
 }
 
-// NewRateLimiter allows perMinute requests per user per minute, with bursts up to burst.
 func NewRateLimiter(perMinute, burst int) *RateLimiter {
 	rl := &RateLimiter{
 		limiters: make(map[string]*userLimiter),
@@ -59,7 +56,7 @@ func (rl *RateLimiter) cleanup() {
 	}
 }
 
-// Middleware must run after Auth so the user ID is available.
+// has to run after Auth so the uid is set
 func (rl *RateLimiter) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := c.GetString(CtxUID)

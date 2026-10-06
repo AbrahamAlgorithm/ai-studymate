@@ -1,4 +1,3 @@
-# Keep secrets and local artefacts out of the build context
 **/.env
 **/.env.*
 !**/.env.example
@@ -11,7 +10,5 @@ dist
 .vite
 docs
 *.md
-*.md.resolved
 backend/server
-.firebase
 .DS_Store

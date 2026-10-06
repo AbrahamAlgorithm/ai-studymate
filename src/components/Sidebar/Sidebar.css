@@ -1,5 +1,3 @@
-/* ─── Sidebar base ───────────────────────────────────────────────────────── */
-
 .sidebar {
   height: 100%;
   overflow-y: auto;
@@ -12,8 +10,6 @@
   color: #f1f1f1;
   flex-shrink: 0;
 }
-
-/* ─── Theme tokens ───────────────────────────────────────────────────────── */
 
 .sidebar-dark {
   --side-bg: #101010;
@@ -42,8 +38,6 @@
   border-right: 1px solid var(--side-divider);
   color: var(--side-text);
 }
-
-/* ─── Inner structure ────────────────────────────────────────────────────── */
 
 .sidebar img {
   width: 18px;
@@ -174,7 +168,6 @@
   cursor: pointer;
 }
 
-/* Empty sessions message */
 .recent-empty {
   font-size: 0.8rem;
   color: var(--side-muted);
@@ -182,19 +175,10 @@
   font-style: italic;
 }
 
-
-/* ─── Mobile drawer ──────────────────────────────────────────────────────── */
-/*
-  On mobile the sidebar is completely hidden until opened.
-  When isOpen=true the .sidebar-open class is added and the panel slides in
-  from the left using a CSS transform transition.
-  The backdrop sits behind it (z-index 199) and closes it on tap.
-  The sidebar itself is z-index 200 so it always draws above the content.
-*/
+/* hidden on mobile until it slides in from the left */
 
 @media (max-width: 760px) {
 
-  /* Base: hidden off-screen to the left */
   .sidebar {
     position: fixed;
     top: 0;
@@ -209,19 +193,17 @@
     overflow-y: auto;
   }
 
-  /* Slide in when open */
   .sidebar.sidebar-open {
     transform: translateX(0);
     box-shadow: 4px 0 32px rgba(0, 0, 0, 0.5);
   }
 
-  /* Hide the sidebar's internal hamburger on mobile 
-     because the header hamburger handles the toggle. */
+  /* the header hamburger handles this on mobile */
   .sidebar-brand .menu {
     display: none;
   }
 
-  /* Semi-transparent backdrop — tap to close */
+  /* tap outside to close */
   .sidebar-backdrop {
     position: fixed;
     inset: 0;
@@ -238,8 +220,6 @@
   }
 
 }
-
-/* ─── Theme picker ───────────────────────────────────────────────────────── */
 
 .theme-picker-wrap {
   position: relative;

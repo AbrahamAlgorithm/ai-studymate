@@ -93,9 +93,7 @@ jobs:
           gcloud auth login --cred-file="$GOOGLE_GHA_CREDS_PATH" --quiet
           gcloud config set project "$GCP_PROJECT"
 
-      # Builds the root Dockerfile (React app + Go API in one image).
-      # AI keys are NOT passed here: they are configured once on the service
-      # (see README → Deployment) and are preserved across deploys.
+      # the gemini key lives on the cloud run service itself, redeploys keep it
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy "$SERVICE" \

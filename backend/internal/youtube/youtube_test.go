@@ -1,6 +1,11 @@
 package youtube
 
-import "testing"
+import (
+	"context"
+	"os"
+	"strings"
+	"testing"
+)
 
 func TestExtractVideoID(t *testing.T) {
 	for url, want := range map[string]string{
@@ -37,21 +42,6 @@ func TestParseChapters(t *testing.T) {
 	}
 }
 
-func TestParseISO8601Duration(t *testing.T) {
-	for in, want := range map[string]int{"PT1H2M3S": 3723, "PT45S": 45, "PT10M": 600, "P1D": 0, "": 0} {
-		if got := parseISO8601Duration(in); got != want {
-			t.Errorf("parseISO8601Duration(%q) = %d, want %d", in, got, want)
-		}
-	}
-}
-
-func TestDecodeEmbeddedURL(t *testing.T) {
-	got := decodeEmbeddedURL(`https://www.youtube.com/api/timedtext?v=abc&lang=en&sig=x`)
-	if got != "https://www.youtube.com/api/timedtext?v=abc&lang=en&sig=x" {
-		t.Errorf("decodeEmbeddedURL = %q", got)
-	}
-}
-
 func TestTimestamps(t *testing.T) {
 	if FormatTimestamp(65) != "1:05" || FormatTimestamp(3723) != "1:02:03" {
 		t.Error("FormatTimestamp wrong")
@@ -70,4 +60,71 @@ func TestTranscriptWindowAndText(t *testing.T) {
 	if got := TranscriptText(w); got != "[5:00] b\n" {
 		t.Errorf("TranscriptText = %q", got)
 	}
+}
+
+func TestPickTrack(t *testing.T) {
+	ar := captionTrack{LanguageCode: "ar", Kind: "asr"}
+	enAuto := captionTrack{LanguageCode: "en", Kind: "asr"}
+	enGB := captionTrack{LanguageCode: "en-GB"}
+	fr := captionTrack{LanguageCode: "fr"}
+	deAuto := captionTrack{LanguageCode: "de", Kind: "asr"}
+
+	cases := []struct {
+		tracks []captionTrack
+		want   string
+	}{
+		{[]captionTrack{ar, enAuto, enGB}, "en-GB"}, // proper english beats auto-generated
+		{[]captionTrack{ar, enAuto}, "en"},          // this video listed arabic first
+		{[]captionTrack{fr, deAuto}, "de"},          // no english, use the spoken language
+		{[]captionTrack{fr}, "fr"},
+	}
+	for _, tc := range cases {
+		if got, ok := pickTrack(tc.tracks); !ok || got.LanguageCode != tc.want {
+			t.Errorf("pickTrack(%v) = %q, want %q", tc.tracks, got.LanguageCode, tc.want)
+		}
+	}
+	if _, ok := pickTrack(nil); ok {
+		t.Error("no tracks should mean no pick")
+	}
+}
+
+func TestParseTimedText(t *testing.T) {
+	xml := `<?xml version="1.0" encoding="utf-8" ?><transcript>` +
+		`<text start="0.16" dur="3.7">it&amp;#39;s a load
+balancer</text><text start="2" dur="1">  </text><text start="31.5" dur="2">cache &amp;amp; database</text></transcript>`
+	segs, err := parseTimedText([]byte(xml))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(segs) != 2 || segs[0].Text != "it's a load balancer" || segs[1].Text != "cache & database" || segs[1].StartSeconds != 31.5 {
+		t.Fatalf("segs = %+v", segs)
+	}
+	if got := TranscriptText(segs); got != "[0:00] it's a load balancer\n[0:31] cache & database\n" {
+		t.Errorf("TranscriptText = %q", got)
+	}
+}
+
+func TestTranscriptTextGroupsIntoParagraphs(t *testing.T) {
+	segs := []TranscriptSegment{{Text: "a", StartSeconds: 0}, {Text: "b", StartSeconds: 10}, {Text: "c", StartSeconds: 31}, {Text: "d", StartSeconds: 45}}
+	if got := TranscriptText(segs); got != "[0:00] a b\n[0:31] c d\n" {
+		t.Errorf("TranscriptText = %q", got)
+	}
+}
+
+// talks to youtube for real, run it with: YOUTUBE_LIVE=1 go test ./internal/youtube -run Live -v
+func TestFetchVideoLive(t *testing.T) {
+	if os.Getenv("YOUTUBE_LIVE") == "" {
+		t.Skip("set YOUTUBE_LIVE=1 to run")
+	}
+	meta, segs, err := FetchVideo(context.Background(), "SE2KF-vxvS0")
+	if err != nil || meta == nil {
+		t.Fatalf("meta = %+v, err = %v", meta, err)
+	}
+	if !strings.Contains(meta.Title, "System Design") || meta.Duration == 0 || len(meta.Chapters) == 0 {
+		t.Errorf("meta = %+v", meta)
+	}
+	if len(segs) < 100 || !strings.Contains(strings.ToLower(TranscriptText(segs[:20])), "system") {
+		t.Errorf("expected an english transcript, got %d segments, starts %q", len(segs), TranscriptText(segs[:min(3, len(segs))]))
+	}
+	t.Logf("%q by %s, %ds, %d chapters, %d transcript lines, starts: %s", meta.Title, meta.Channel, meta.Duration, len(meta.Chapters), len(segs), TranscriptText(segs[:3]))
 }

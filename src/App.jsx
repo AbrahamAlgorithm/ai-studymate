@@ -4,7 +4,7 @@ import Landing from './components/Landing/Landing'
 import { Context } from './context/Context'
 import './App.css'
 
-// Route-level code splitting: the landing page doesn't download MUI, KaTeX or the chat UI.
+// lazy so the landing page doesn't pull in mui, katex and the chat ui
 const Sidebar = lazy(() => import('./components/Sidebar/Sidebar'))
 const Main = lazy(() => import('./components/Main/Main'))
 const Signin = lazy(() => import('./components/Auth/Signin'))
@@ -16,11 +16,11 @@ const Progress = lazy(() => import('./components/Progress/Progress'))
 const Home = () => {
   const { themeMode } = useContext(Context)
 
-  // Persist sidebar preference across refreshes and re-logins
+  // remember the sidebar state across refreshes
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('sm_sidebar_open')
     if (saved !== null) return saved === 'true'
-    return window.innerWidth > 760 // default: open on desktop, closed on phones
+    return window.innerWidth > 760 // open on desktop, closed on phones
   })
 
   const toggleSidebar = () => {

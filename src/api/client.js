@@ -1,8 +1,11 @@
 import { auth } from '../firebase'
 
-// Same-origin in production (the Go server serves the app). In development,
-// Vite proxies /api to the backend, so this stays empty unless overridden.
+// empty means same origin, vite proxies /api to the go server in dev
 const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+
+const UNREACHABLE = import.meta.env.DEV
+    ? "Can't reach the API. Make sure the Go server is running (npm run dev starts both)."
+    : "Can't reach StudyMate right now. Check your connection and try again."
 
 export class ApiError extends Error {
     constructor(message, status) {
@@ -18,8 +21,49 @@ const authHeader = async () => {
     return { Authorization: `Bearer ${await user.getIdToken()}` }
 }
 
-const request = async (path, { json, formData, signal } = {}) => {
+// reads the server-sent events from a streamed answer, onText gets the full text so far
+const readStream = async (res, onText) => {
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let text = ''
+    for (;;) {
+        let chunk
+        try {
+            chunk = await reader.read()
+        } catch (err) {
+            if (err.name === 'AbortError') throw err
+            throw new ApiError('The answer got cut off. Please try again.', 0)
+        }
+        const { value, done } = chunk
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        let end
+        while ((end = buffer.indexOf('\n\n')) >= 0) {
+            const raw = buffer.slice(0, end)
+            buffer = buffer.slice(end + 2)
+            const event = raw.match(/^event: (.*)$/m)?.[1]
+            const data = JSON.parse(raw.match(/^data: (.*)$/m)?.[1] || '{}')
+            if (event === 'chunk') {
+                text += data.text
+                onText(text)
+            } else if (event === 'reset') {
+                // the model died halfway and another one is starting over
+                text = ''
+                onText(text)
+            } else if (event === 'error') {
+                throw new ApiError(data.error, 502)
+            } else if (event === 'done') {
+                return { response: text, model: data.model }
+            }
+        }
+    }
+    throw new ApiError('The answer got cut off. Please try again.', 502)
+}
+
+const request = async (path, { json, formData, signal, onText } = {}) => {
     const headers = await authHeader()
+    if (onText) headers.Accept = 'text/event-stream'
     let body
     if (json !== undefined) {
         headers['Content-Type'] = 'application/json'
@@ -33,21 +77,24 @@ const request = async (path, { json, formData, signal } = {}) => {
         res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers, body, signal })
     } catch (err) {
         if (err.name === 'AbortError') throw err
-        throw new ApiError('Could not reach StudyMate. Check your connection and try again.', 0)
+        throw new ApiError(UNREACHABLE, 0)
     }
 
-    const data = await res.json().catch(() => ({}))
-    if (!res.ok) {
-        throw new ApiError(data.error || `Something went wrong (HTTP ${res.status}). Please try again.`, res.status)
+    if (res.ok && onText && res.headers.get('Content-Type')?.includes('text/event-stream')) {
+        return readStream(res, onText)
     }
-    return data
+
+    const data = await res.json().catch(() => null)
+    if (res.ok && data) return data
+    if (data?.error) throw new ApiError(data.error, res.status)
+    // no json body means our server never answered, e.g. the vite proxy couldn't connect
+    if (res.status >= 500) throw new ApiError(UNREACHABLE, res.status)
+    throw new ApiError('Something went wrong. Please try again.', res.status)
 }
 
-/** Ask & Learn chat. history: [{role: 'user'|'assistant', content}] */
 export const chat = ({ message, history, mode }, opts) =>
     request('/api/chat', { json: { message, history, mode }, ...opts })
 
-/** Upload a handout (PDF, image, .txt/.md) with an optional question. */
 export const analyzeHandout = ({ file, question, mode }, opts) => {
     const formData = new FormData()
     formData.append('file', file)
@@ -56,11 +103,9 @@ export const analyzeHandout = ({ file, question, mode }, opts) => {
     return request('/api/handout', { formData, ...opts })
 }
 
-/** Video metadata + transcript (when captions are available). */
 export const youtubeInfo = (url, opts) =>
     request('/api/youtube/info', { json: { url }, ...opts })
 
-/** Ask a question about a loaded video. */
 export const youtubeAsk = ({ video, question, history }, opts) =>
     request('/api/youtube/ask', {
         json: {
@@ -76,7 +121,6 @@ export const youtubeAsk = ({ video, question, history }, opts) =>
         ...opts,
     })
 
-/** Generate a structured quiz. source: optional link (web page or YouTube) or pasted text. */
 export const generateQuiz = ({ topic, count, difficulty, type, source }, opts) => {
     let context
     const cleanSource = (source || '').trim()

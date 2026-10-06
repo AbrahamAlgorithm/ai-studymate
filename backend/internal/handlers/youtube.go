@@ -12,8 +12,6 @@ import (
 	"studymate/backend/internal/youtube"
 )
 
-// --- /api/youtube/info ---
-
 type youtubeInfoRequest struct {
 	URL string `json:"url" binding:"required"`
 }
@@ -36,17 +34,17 @@ func (h *Handler) YoutubeInfo(c *gin.Context) {
 		return
 	}
 
-	meta, err := youtube.FetchMeta(c.Request.Context(), h.YoutubeAPIKey, videoID)
+	meta, transcript, err := youtube.FetchVideo(c.Request.Context(), videoID)
 	if err != nil {
-		log.Printf("[youtube] metadata for %s: %v", videoID, err)
-		c.JSON(http.StatusNotFound, gin.H{"error": "Couldn't load that video. Check the link — private or removed videos can't be used."})
-		return
+		log.Printf("[youtube] player for %s: %v", videoID, err)
 	}
-
-	transcript, err := youtube.FetchTranscript(c.Request.Context(), videoID)
-	if err != nil {
-		// Transcript is best-effort — return metadata even if captions are unavailable.
-		log.Printf("[youtube] transcript for %s: %v", videoID, err)
+	if meta == nil {
+		// youtube can refuse the player call (cloud ips get this a lot), oembed still gives the basics
+		if meta, err = youtube.FetchOEmbed(c.Request.Context(), videoID); err != nil {
+			log.Printf("[youtube] oembed for %s: %v", videoID, err)
+			c.JSON(http.StatusNotFound, gin.H{"error": "Couldn't load that video. Check the link, private or removed videos won't work."})
+			return
+		}
 		transcript = []youtube.TranscriptSegment{}
 	}
 
@@ -57,8 +55,6 @@ func (h *Handler) YoutubeInfo(c *gin.Context) {
 	})
 }
 
-// --- /api/youtube/ask ---
-
 type youtubeAskRequest struct {
 	VideoID     string                      `json:"videoId"  binding:"required"`
 	Title       string                      `json:"title"`
@@ -67,11 +63,10 @@ type youtubeAskRequest struct {
 	Question    string                      `json:"question" binding:"required"`
 	Transcript  []youtube.TranscriptSegment `json:"transcript"`
 	Chapters    []youtube.Chapter           `json:"chapters"`
-	FocusTime   float64                     `json:"focusTime"` // seconds, 0 = detect from question / full transcript
+	FocusTime   float64                     `json:"focusTime"` // seconds, 0 means look for a timestamp in the question
 	History     []ai.Message                `json:"history"`
 }
 
-// timestampInText finds the first "12:30" / "1:02:03" style timestamp in a question.
 var timestampInText = regexp.MustCompile(`\b(\d{1,2}:\d{2}(?::\d{2})?)\b`)
 
 func (h *Handler) YoutubeAsk(c *gin.Context) {
@@ -95,19 +90,7 @@ func (h *Handler) YoutubeAsk(c *gin.Context) {
 	userTurn := buildVideoContext(req, focus) + "\n\nQUESTION: " + question
 	messages := append(sanitizeHistory(req.History), ai.Message{Role: "user", Content: userTurn})
 
-	resp, err := h.AI.Chat(c.Request.Context(), ai.ChatRequest{
-		System:   systemPromptForMode("youtube"),
-		Messages: messages,
-	})
-	if err != nil {
-		respondAIError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"response": resp.Text,
-		"provider": resp.Provider,
-	})
+	h.answer(c, ai.ChatRequest{System: systemPromptForMode("youtube"), Messages: messages})
 }
 
 func buildVideoContext(req youtubeAskRequest, focus float64) string {
@@ -127,7 +110,7 @@ func buildVideoContext(req youtubeAskRequest, focus float64) string {
 
 	segs := req.Transcript
 	if focus > 0 && len(segs) > 0 {
-		if window := youtube.TranscriptWindow(segs, focus, 120); len(window) > 0 { // ±2 min
+		if window := youtube.TranscriptWindow(segs, focus, 120); len(window) > 0 {
 			segs = window
 			fmt.Fprintf(&sb, "\n(The student is asking about the part around %s; the transcript below covers that window.)\n",
 				youtube.FormatTimestamp(int(focus)))
@@ -140,7 +123,7 @@ func buildVideoContext(req youtubeAskRequest, focus float64) string {
 		return sb.String()
 	}
 
-	// No captions: be honest about what the model can and cannot see.
+	// no captions, so make sure the model doesn't pretend it watched the video
 	if req.Description != "" {
 		sb.WriteString("\nVIDEO DESCRIPTION:\n")
 		sb.WriteString(truncateRunes(req.Description, 4000))

@@ -1,4 +1,3 @@
-// Package static serves the built single-page app alongside the API.
 package static
 
 import (
@@ -11,14 +10,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Exists reports whether dir contains a built app (an index.html).
 func Exists(dir string) bool {
 	info, err := os.Stat(filepath.Join(dir, "index.html"))
 	return err == nil && !info.IsDir()
 }
 
-// SPA serves files from dir, falling back to index.html for client-side
-// routes such as /chat. Unknown /api paths get a JSON 404 instead.
+// real files get served as is, anything else gets index.html so routes like /chat work on refresh
 func SPA(dir string) gin.HandlerFunc {
 	root := http.Dir(dir)
 	fileServer := http.FileServer(root)
@@ -34,14 +31,14 @@ func SPA(dir string) gin.HandlerFunc {
 			return
 		}
 
-		// http.Dir rejects ".." traversal; path.Clean normalises the lookup.
+		// http.Dir already blocks ".." so this can't leave the folder
 		clean := path.Clean("/" + p)
 		if f, err := root.Open(clean); err == nil {
 			info, statErr := f.Stat()
 			f.Close()
 			if statErr == nil && !info.IsDir() {
 				if strings.HasPrefix(clean, "/assets/") {
-					// Vite fingerprints these filenames, so they can be cached forever.
+					// vite hashes these filenames, so cache them forever
 					c.Header("Cache-Control", "public, max-age=31536000, immutable")
 				} else {
 					c.Header("Cache-Control", "public, max-age=3600")
@@ -51,7 +48,7 @@ func SPA(dir string) gin.HandlerFunc {
 			}
 		}
 
-		// Client-side route: always serve a fresh index.html so deploys show up immediately.
+		// never cache index.html or people won't see new deploys
 		serveIndex(c, root)
 	}
 }

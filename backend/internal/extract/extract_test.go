@@ -19,7 +19,7 @@ func TestIsPublicAddr(t *testing.T) {
 		"10.1.2.3":         false,
 		"172.16.0.1":       false,
 		"192.168.1.1":      false,
-		"169.254.169.254":  false, // cloud metadata server
+		"169.254.169.254":  false, // metadata server
 		"100.64.0.1":       false,
 		"0.0.0.0":          false,
 		"::1":              false,

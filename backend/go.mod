@@ -8,7 +8,6 @@ require (
 	github.com/gin-contrib/cors v1.7.2
 	github.com/gin-gonic/gin v1.10.0
 	github.com/joho/godotenv v1.5.1
-	github.com/sashabaranov/go-openai v1.27.0
 	google.golang.org/api v0.197.0
 	google.golang.org/genai v1.72.0
 )

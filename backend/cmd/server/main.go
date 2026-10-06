@@ -25,43 +25,30 @@ import (
 )
 
 func main() {
-	// Local development convenience; in production, env vars come from Cloud Run.
-	_ = godotenv.Load()
+	_ = godotenv.Load() // only matters locally, cloud run passes the real env vars
 
 	ctx := context.Background()
 
-	// ── AI providers ──────────────────────────────────────────────────────────
-	geminiProvider, err := ai.NewGemini(ctx, os.Getenv("GEMINI_API_KEY"), os.Getenv("GEMINI_MODEL"))
+	gemini, err := ai.NewGemini(ctx, ai.Config{
+		APIKey:    os.Getenv("GEMINI_API_KEY"),
+		Model:     os.Getenv("GEMINI_MODEL"),
+		Fallbacks: fallbackModels(),
+		Thinking:  os.Getenv("GEMINI_THINKING"),
+	})
 	if err != nil {
 		log.Fatalf("init gemini: %v", err)
 	}
-	openaiProvider := ai.NewOpenAI(os.Getenv("OPENAI_API_KEY"), os.Getenv("OPENAI_MODEL"))
-
-	router := ai.NewRouter(geminiProvider, openaiProvider) // Gemini preferred
-	log.Printf("AI provider: %s", router.ActiveProvider())
-	if router.ActiveProvider() == "none" {
-		log.Printf("WARNING: no AI provider configured — set GEMINI_API_KEY or OPENAI_API_KEY")
+	if gemini.Ready() {
+		log.Printf("using %s, falls back to %v", gemini.Model(), fallbackModels())
+	} else {
+		log.Print("GEMINI_API_KEY is not set, AI requests will fail")
 	}
 
-	// ── Firebase Admin SDK (only used to verify ID tokens) ───────────────────
 	projectID := os.Getenv("FIREBASE_PROJECT_ID")
 	if projectID == "" {
 		log.Fatal("FIREBASE_PROJECT_ID is required")
 	}
-	var firebaseOpts []option.ClientOption
-	switch {
-	case os.Getenv("FIREBASE_SERVICE_ACCOUNT_JSON") != "":
-		firebaseOpts = append(firebaseOpts, option.WithCredentialsJSON([]byte(os.Getenv("FIREBASE_SERVICE_ACCOUNT_JSON"))))
-	case os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") != "":
-		// Picked up automatically as Application Default Credentials.
-	default:
-		// Verifying ID tokens only needs Google's public signing keys and the
-		// project ID, so don't require credentials (otherwise startup fails
-		// anywhere without ADC, e.g. a fresh clone or a plain Docker run).
-		firebaseOpts = append(firebaseOpts, option.WithoutAuthentication())
-	}
-
-	fbApp, err := firebase.NewApp(ctx, &firebase.Config{ProjectID: projectID}, firebaseOpts...)
+	fbApp, err := firebase.NewApp(ctx, &firebase.Config{ProjectID: projectID}, firebaseOptions()...)
 	if err != nil {
 		log.Fatalf("init firebase: %v", err)
 	}
@@ -70,21 +57,17 @@ func main() {
 		log.Fatalf("init firebase auth: %v", err)
 	}
 
-	// ── Handlers ──────────────────────────────────────────────────────────────
-	h := handlers.New(router, os.Getenv("YOUTUBE_API_KEY"))
+	h := handlers.New(gemini)
 	limiter := middleware.NewRateLimiter(envInt("RATE_LIMIT_PER_MINUTE", 20), envInt("RATE_LIMIT_BURST", 10))
 
-	// ── Gin ───────────────────────────────────────────────────────────────────
 	if os.Getenv("GIN_MODE") == "" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery(), securityHeaders())
-	_ = r.SetTrustedProxies(nil) // Cloud Run's front end sets X-Forwarded-For; don't trust it for ClientIP
+	_ = r.SetTrustedProxies(nil)
 
-	// CORS is only needed when the frontend runs on a different origin
-	// (e.g. Vite without its /api proxy). In production the API and the app
-	// share an origin.
+	// only needed when the frontend runs on another origin, prod is same origin
 	r.Use(cors.New(cors.Config{
 		AllowOrigins:  allowedOrigins(),
 		AllowMethods:  []string{"GET", "POST", "OPTIONS"},
@@ -93,9 +76,12 @@ func main() {
 		MaxAge:        12 * time.Hour,
 	}))
 
-	// ── Routes ────────────────────────────────────────────────────────────────
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok", "provider": router.ActiveProvider()})
+		model := "none"
+		if gemini.Ready() {
+			model = gemini.Model()
+		}
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "model": model})
 	})
 
 	api := r.Group("/api", middleware.Auth(authClient), limiter.Middleware(), requestTimeout(2*time.Minute))
@@ -106,11 +92,9 @@ func main() {
 		json.POST("/youtube/ask", h.YoutubeAsk)
 		json.POST("/quiz", h.Quiz)
 
-		api.POST("/handout", h.Handout) // multipart; enforces its own size limit
+		api.POST("/handout", h.Handout) // multipart, it checks its own size limit
 	}
 
-	// Serve the built React app (single container deploy). Skipped when the
-	// directory doesn't exist, e.g. local dev where Vite serves the frontend.
 	staticDir := envOr("STATIC_DIR", "./web")
 	if static.Exists(staticDir) {
 		log.Printf("serving frontend from %s", staticDir)
@@ -119,7 +103,6 @@ func main() {
 		r.NoRoute(func(c *gin.Context) { c.JSON(http.StatusNotFound, gin.H{"error": "not found"}) })
 	}
 
-	// ── Listen ────────────────────────────────────────────────────────────────
 	srv := &http.Server{
 		Addr:              ":" + envOr("PORT", "8080"),
 		Handler:           r,
@@ -133,16 +116,41 @@ func main() {
 		}
 	}()
 
-	// Cloud Run sends SIGTERM before stopping an instance; finish in-flight requests.
+	// cloud run sends SIGTERM before it kills the instance, so finish what's in flight
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	<-stop
-	log.Print("shutting down…")
+	log.Print("shutting down")
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		log.Printf("shutdown: %v", err)
 	}
+}
+
+func firebaseOptions() []option.ClientOption {
+	if saJSON := os.Getenv("FIREBASE_SERVICE_ACCOUNT_JSON"); saJSON != "" {
+		return []option.ClientOption{option.WithCredentialsJSON([]byte(saJSON))}
+	}
+	if os.Getenv("GOOGLE_APPLICATION_CREDENTIALS") != "" {
+		return nil
+	}
+	// verifying id tokens only needs google's public keys, no credentials
+	return []option.ClientOption{option.WithoutAuthentication()}
+}
+
+func fallbackModels() []string {
+	raw := os.Getenv("GEMINI_FALLBACK_MODELS")
+	if raw == "" {
+		return ai.DefaultFallbacks
+	}
+	var models []string
+	for _, m := range strings.Split(raw, ",") {
+		if m = strings.TrimSpace(m); m != "" {
+			models = append(models, m)
+		}
+	}
+	return models
 }
 
 func allowedOrigins() []string {

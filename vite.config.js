@@ -7,7 +7,7 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // Vendor chunks change rarely, so browsers keep them cached across deploys.
+        // these barely change, so browsers keep them cached between deploys
         manualChunks: {
           react: ['react', 'react-dom', 'react-router-dom'],
           firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
@@ -17,12 +17,13 @@ export default defineConfig({
     },
   },
   server: {
-    // In development the Go API runs separately (npm run dev:api); proxying
-    // keeps requests same-origin so no CORS setup is needed.
+    // the go api runs on 8080 in dev, proxying keeps it same origin
     proxy: {
       '/api': {
         target: process.env.API_PROXY_TARGET || 'http://localhost:8080',
         changeOrigin: true,
+        // it's same origin through the proxy, without this the api rejects vite's backup ports like 5174
+        configure: (proxy) => proxy.on('proxyReq', (req) => req.removeHeader('origin')),
       },
     },
   },

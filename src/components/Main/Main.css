@@ -1,5 +1,3 @@
-/* ─── Theme Tokens ───────────────────────────────────────────────────────── */
-
 .main-dark {
   --main-bg: #111111;
   --main-text: #fafafa;
@@ -28,19 +26,13 @@
   --user-bubble-text: #111111;
 }
 
-/* ─── Root Layout ─────────────────────────────────────────────────────────── */
-
 html,
 body,
 #root {
   height: 100%;
   overscroll-behavior: none;
-  /* overflow is NOT set here — each page manages its own scroll.
-     The chat route freezes the body via JS on mobile; landing/auth
-     pages need normal document scroll. */
+  /* each page handles its own scroll, the chat page freezes the body on mobile */
 }
-
-/* ─── Main wrapper ───────────────────────────────────────────────────────── */
 
 .main {
   flex: 1;
@@ -52,8 +44,6 @@ body,
   background: var(--main-bg);
   color: var(--main-text);
 }
-
-/* ─── Nav ────────────────────────────────────────────────────────────────── */
 
 .main .nav {
   display: flex;
@@ -70,7 +60,6 @@ body,
   gap: 12px;
 }
 
-/* Hamburger: hidden on desktop, shown on mobile only */
 .hamburger-btn {
   display: none;
 }
@@ -114,7 +103,6 @@ body,
   border-radius: 50%;
 }
 
-/* Initials avatar — replaces the user icon image */
 .user-avatar-initials {
   width: 36px;
   height: 36px;
@@ -129,16 +117,10 @@ body,
   flex-shrink: 0;
   cursor: default;
   user-select: none;
-  /* background set inline via hsl(hue,55%,40%) for per-user colour */
+
 }
 
-/* ─── Content area ───────────────────────────────────────────────────────── */
-/*
-  .main-container and .main-bottom are SIBLINGS inside .main (flex column).
-  .main-bottom is NOT a child of .main-container.
-  On mobile .main-bottom becomes position:fixed — completely decoupled —
-  so focusing the textarea can never scroll .main-container.
-*/
+/* .main-bottom is a sibling of this, not a child, so the mobile keyboard can't scroll it */
 
 .main-container {
   flex: 1 1 auto;
@@ -150,8 +132,6 @@ body,
   margin: 0 auto;
   padding: 26px 24px 20px;
 }
-
-/* ─── Greet ──────────────────────────────────────────────────────────────── */
 
 .main .greet {
   margin: 8px 0 26px;
@@ -181,8 +161,6 @@ body,
   line-height: 1.5;
   color: var(--main-muted);
 }
-
-/* ─── Mode switcher ──────────────────────────────────────────────────────── */
 
 .mode-switcher {
   display: grid;
@@ -219,8 +197,6 @@ body,
   color: var(--main-bg);
   border-color: var(--main-text);
 }
-
-/* ─── Mode panel ─────────────────────────────────────────────────────────── */
 
 .mode-panel {
   margin-bottom: 16px;
@@ -277,8 +253,6 @@ body,
   display: none;
 }
 
-/* ─── Starter cards ──────────────────────────────────────────────────────── */
-
 .main .cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -319,15 +293,11 @@ body,
   transform: translateY(-1px);
 }
 
-/* ─── Bottom bar ─────────────────────────────────────────────────────────── */
-
 .main-bottom {
   flex-shrink: 0;
   padding: 10px 24px 14px;
   background: linear-gradient(to top, var(--main-bg) 72%, transparent 100%);
 }
-
-/* ─── Search / input box ─────────────────────────────────────────────────── */
 
 .search-box {
   display: flex;
@@ -390,8 +360,6 @@ body,
   max-width: 840px;
 }
 
-/* ─── Chat result container ──────────────────────────────────────────────── */
-
 .result {
   margin-top: 6px;
 }
@@ -439,7 +407,7 @@ body,
 
 .user-bubble p {
   color: var(--user-bubble-text);
-  /* Truncate very long messages to 6 lines with ellipsis */
+
   display: -webkit-box;
   -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
@@ -448,7 +416,7 @@ body,
 
 .ai-bubble p {
   color: var(--main-text);
-  /* AI response always shows in full */
+
 }
 
 .ai-bubble b,
@@ -496,8 +464,6 @@ body,
   padding: 0;
 }
 
-/* ─── Loading shimmer ────────────────────────────────────────────────────── */
-
 .loader {
   width: 100%;
   display: flex;
@@ -519,8 +485,6 @@ body,
   0%   { background-position: -800px 0; }
   100% { background-position: 800px 0; }
 }
-
-/* ─── Thinking dots (AI is generating) ──────────────────────────────────── */
 
 .thinking-dots {
   display: flex;
@@ -553,8 +517,6 @@ body,
   }
 }
 
-/* ─── Icon helpers ───────────────────────────────────────────────────────── */
-
 .ui-icon {
   filter: var(--main-icon-filter);
   opacity: 0.95;
@@ -573,8 +535,6 @@ body,
   filter: none;
 }
 
-/* ─── Nav logo (returns to dashboard) ─────────────────────────────────── */
-
 .nav-logo {
   background: none;
   border: none;
@@ -590,8 +550,6 @@ body,
 .nav-logo:hover {
   opacity: 0.8;
 }
-
-/* ─── Thread ─────────────────────────────────────────────────────────────── */
 
 .exchange {
   display: flex;
@@ -618,8 +576,6 @@ body,
 .error-text {
   color: var(--main-muted);
 }
-
-/* ─── Markdown answers ───────────────────────────────────────────────────── */
 
 .md {
   color: var(--main-text);
@@ -712,7 +668,16 @@ body,
 
 .md-inline p { margin: 0; display: inline; }
 
-/* ─── Attachments ────────────────────────────────────────────────────────── */
+.ai-bubble.streaming .md > :last-child::after {
+  content: '▍';
+  margin-left: 2px;
+  animation: caret 1s steps(2) infinite;
+}
+
+@keyframes caret {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
 
 .attachment-row {
   max-width: 840px;
@@ -766,8 +731,6 @@ body,
   border-style: dashed;
 }
 
-/* ─── Input action buttons ───────────────────────────────────────────────── */
-
 .icon-btn {
   background: none;
   border: none;
@@ -806,8 +769,6 @@ body,
   cursor: not-allowed;
 }
 
-/* ─── Quiz options panel ─────────────────────────────────────────────────── */
-
 .quiz-options-panel {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -841,8 +802,6 @@ body,
 .quiz-options-panel .quiz-source {
   grid-column: 1 / -1;
 }
-
-/* ─── Quiz ───────────────────────────────────────────────────────────────── */
 
 .quiz {
   border: 1px solid var(--main-border);
@@ -979,8 +938,6 @@ body,
   border-top: 1px solid var(--main-border);
 }
 
-/* ─── Video card ─────────────────────────────────────────────────────────── */
-
 .video-card {
   display: flex;
   gap: 14px;
@@ -1061,8 +1018,6 @@ body,
 .video-badge.ok { color: #3c9d5d; }
 .video-badge.warn { color: #c58b1a; }
 
-/* ─── Tablet (≤ 980 px) ─────────────────────────────────────────────────── */
-
 @media (max-width: 980px) {
   .mode-switcher {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1072,8 +1027,6 @@ body,
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-
-/* ─── Mobile (≤ 760 px) ─────────────────────────────────────────────────── */
 
 @media (max-width: 760px) {
 
@@ -1095,7 +1048,6 @@ body,
     display: none;
   }
 
-  /* Hamburger: shown on mobile, hidden on desktop */
   .hamburger-btn {
     display: flex;
     flex-direction: column;
@@ -1124,18 +1076,16 @@ body,
     opacity: 0.5;
   }
 
-  /* Content area */
   .main-container {
     padding: 16px 14px 10px;
     flex: 1 1 auto;
   }
 
-  /* Dashboard: lock scroll so keyboard cannot push greeting up */
+  /* so the keyboard can't push the greeting up */
   .main-container.dashboard-mode {
     overflow: hidden;
   }
 
-  /* Chat mode: allow normal scrolling */
   .main-container:not(.dashboard-mode) {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -1157,7 +1107,7 @@ body,
     display: none;
   }
 
-  /* Fixed input bar — decoupled from content so keyboard cannot move content */
+  /* stays above the keyboard */
   .main-bottom {
     position: fixed;
     left: 0;
@@ -1194,10 +1144,9 @@ body,
   }
 
 }
-/* ─── Mobile additions (≤ 760 px) ───────────────────────────────────────── */
 
 @media (max-width: 760px) {
-  /* Comfortable tap target, away from rounded screen corners */
+  /* bigger tap target, away from the rounded screen corners */
   .main .nav {
     padding: 12px 16px 12px max(16px, env(safe-area-inset-left));
   }

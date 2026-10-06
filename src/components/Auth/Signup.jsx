@@ -175,7 +175,6 @@ const Signup = () => {
                 transition={{ duration: 0.35 }}
                 sx={styles.pageContainer}
             >
-                {/* ── Back to landing ── */}
                 <Box
                     component={Link}
                     to="/"

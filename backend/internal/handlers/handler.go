@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -13,32 +15,28 @@ import (
 )
 
 const (
-	maxJSONBodyBytes  = 4 << 20 // transcripts are sent back with YouTube questions
-	maxHistoryTurns   = 20      // most recent messages kept as conversation context
-	maxMessageChars   = 20000   // per message
+	maxJSONBodyBytes  = 4 << 20 // big enough for a youtube transcript coming back
+	maxHistoryTurns   = 20
+	maxMessageChars   = 20000
 	maxQuestionChars  = 4000
 	defaultQuizCount  = 10
 	maxQuizCount      = 20
 	maxTranscriptChar = 200000
 )
 
-// Chatter is the AI dependency of the handlers (satisfied by *ai.Router).
 type Chatter interface {
 	Chat(ctx context.Context, req ai.ChatRequest) (*ai.ChatResponse, error)
+	Stream(ctx context.Context, req ai.ChatRequest, sink *ai.Sink) (*ai.ChatResponse, error)
 }
 
-// Handler holds shared dependencies injected at startup.
 type Handler struct {
-	AI            Chatter
-	YoutubeAPIKey string
+	AI Chatter
 }
 
-// New creates a Handler with the given dependencies.
-func New(chatter Chatter, youtubeAPIKey string) *Handler {
-	return &Handler{AI: chatter, YoutubeAPIKey: youtubeAPIKey}
+func New(chatter Chatter) *Handler {
+	return &Handler{AI: chatter}
 }
 
-// LimitJSONBody caps request bodies for JSON endpoints.
 func LimitJSONBody() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxJSONBodyBytes)
@@ -46,7 +44,6 @@ func LimitJSONBody() gin.HandlerFunc {
 	}
 }
 
-// bindJSON decodes the body and writes a 400 on failure.
 func bindJSON(c *gin.Context, dst any) bool {
 	if err := c.ShouldBindJSON(dst); err != nil {
 		var maxErr *http.MaxBytesError
@@ -60,23 +57,79 @@ func bindJSON(c *gin.Context, dst any) bool {
 	return true
 }
 
-// respondAIError maps AI failures to user-friendly responses without leaking
-// upstream details (which are logged instead).
+// the real error goes to the logs, the user just gets something readable
 func respondAIError(c *gin.Context, err error) {
 	log.Printf("[ai] %s %s: %v", c.Request.Method, c.Request.URL.Path, err)
+	if errors.Is(err, context.Canceled) {
+		c.Status(499)
+		return
+	}
+	status, msg := aiErrorMessage(err)
+	c.JSON(status, gin.H{"error": msg})
+}
+
+func aiErrorMessage(err error) (int, string) {
 	switch {
-	case errors.Is(err, ai.ErrNoProvider):
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "The AI service isn't configured on the server yet."})
+	case errors.Is(err, ai.ErrNotConfigured):
+		return http.StatusServiceUnavailable, "The AI isn't set up on the server yet."
+	case ai.IsBusy(err):
+		return http.StatusServiceUnavailable, "The AI is busy right now. Give it a minute and try again."
 	case errors.Is(err, context.DeadlineExceeded):
-		c.JSON(http.StatusGatewayTimeout, gin.H{"error": "The AI took too long to respond. Please try again."})
-	case errors.Is(err, context.Canceled):
-		c.Status(499) // client went away
+		return http.StatusGatewayTimeout, "That took too long. Please try again."
 	default:
-		c.JSON(http.StatusBadGateway, gin.H{"error": "The AI service couldn't answer right now. Please try again in a moment."})
+		return http.StatusBadGateway, "Couldn't get an answer right now. Please try again."
 	}
 }
 
-// sanitizeHistory keeps the most recent valid turns and trims oversized ones.
+// streams the answer as server-sent events when the browser asks for it, plain json otherwise
+func (h *Handler) answer(c *gin.Context, req ai.ChatRequest) {
+	if !strings.Contains(c.GetHeader("Accept"), "text/event-stream") {
+		resp, err := h.AI.Chat(c.Request.Context(), req)
+		if err != nil {
+			respondAIError(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"response": resp.Text, "model": resp.Model})
+		return
+	}
+
+	started := false
+	resp, err := h.AI.Stream(c.Request.Context(), req, &ai.Sink{
+		Text: func(text string) error {
+			if !started {
+				// headers only go out with the first words, so an early failure can still be a normal json error
+				c.Header("Content-Type", "text/event-stream")
+				c.Header("Cache-Control", "no-cache")
+				c.Header("X-Accel-Buffering", "no")
+				c.Status(http.StatusOK)
+				started = true
+			}
+			writeEvent(c, "chunk", gin.H{"text": text})
+			return c.Request.Context().Err()
+		},
+		Reset: func() error {
+			writeEvent(c, "reset", gin.H{})
+			return c.Request.Context().Err()
+		},
+	})
+	switch {
+	case err != nil && !started:
+		respondAIError(c, err)
+	case err != nil:
+		log.Printf("[ai] stream broke halfway on %s: %v", c.Request.URL.Path, err)
+		_, msg := aiErrorMessage(err)
+		writeEvent(c, "error", gin.H{"error": msg})
+	default:
+		writeEvent(c, "done", gin.H{"model": resp.Model})
+	}
+}
+
+func writeEvent(c *gin.Context, event string, data any) {
+	payload, _ := json.Marshal(data)
+	fmt.Fprintf(c.Writer, "event: %s\ndata: %s\n\n", event, payload)
+	c.Writer.Flush()
+}
+
 func sanitizeHistory(history []ai.Message) []ai.Message {
 	out := make([]ai.Message, 0, len(history))
 	for _, m := range history {
@@ -92,7 +145,7 @@ func sanitizeHistory(history []ai.Message) []ai.Message {
 	if len(out) > maxHistoryTurns {
 		out = out[len(out)-maxHistoryTurns:]
 	}
-	// Conversations must start with a user turn.
+	// gemini wants the conversation to start with a user turn
 	for len(out) > 0 && out[0].Role != "user" {
 		out = out[1:]
 	}

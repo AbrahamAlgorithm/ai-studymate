@@ -1,6 +1,5 @@
 import { useState } from 'react'
 
-/** Compact video header with an inline player (youtube-nocookie) on demand. */
 const VideoCard = ({ video }) => {
     const [playing, setPlaying] = useState(false)
     if (!video?.videoId) return null
@@ -31,8 +30,8 @@ const VideoCard = ({ video }) => {
                 {video.channel && <p className="video-channel">{video.channel}</p>}
                 <p className={`video-badge ${video.transcriptAvailable ? 'ok' : 'warn'}`}>
                     {video.transcriptAvailable
-                        ? 'Transcript loaded — answers cite the video'
-                        : 'No captions available — answers rely on the title and description'}
+                        ? 'Transcript loaded, answers come from the video'
+                        : 'No captions on this one, answers use the title and description'}
                 </p>
             </div>
         </div>

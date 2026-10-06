@@ -1,16 +1,15 @@
 rules_version = '2';
 
-// Deploy with: firebase deploy --only firestore:rules
+// paste this into firebase console > firestore > rules
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Study history: each user can only see and change their own.
+    // people only get to touch their own history
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
 
-    // Contact form: anyone may submit a well-formed message; nobody can read
-    // them from the client (view them in the Firebase console).
+    // anyone can send a contact message, nobody can read them from the app
     match /contact_messages/{id} {
       allow create: if request.resource.data.keys().hasOnly(['firstName', 'lastName', 'email', 'message', 'createdAt'])
         && request.resource.data.firstName is string && request.resource.data.firstName.size() <= 100
@@ -22,7 +21,7 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
-    // Everything else is closed by default.
+    // everything else is locked
     match /{document=**} {
       allow read, write: if false;
     }

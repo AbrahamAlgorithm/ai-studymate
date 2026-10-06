@@ -3,13 +3,9 @@ import { Markdown } from './MessageContent'
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 
-/**
- * Interactive quiz: instant feedback on multiple-choice questions, reveal +
- * self-marking for theory questions, and a score once everything is answered.
- */
 const QuizView = ({ exchange, onScore, onNewQuiz }) => {
     const questions = exchange.quiz || []
-    const [answers, setAnswers] = useState({}) // id -> { choice?: number, correct: boolean, revealed?: boolean }
+    const [answers, setAnswers] = useState({}) // question id -> { choice, correct, revealed }
     const [scoreSaved, setScoreSaved] = useState(false)
 
     const answeredCount = Object.values(answers).filter((a) => a.correct !== undefined).length
@@ -134,7 +130,7 @@ const QuizView = ({ exchange, onScore, onNewQuiz }) => {
                     </p>
                     <p className="quiz-meta">
                         {score === questions.length
-                            ? 'Perfect — try a harder difficulty next.'
+                            ? 'Perfect score. Try a harder difficulty next.'
                             : 'Ask me below to explain any question you missed.'}
                     </p>
                 </div>

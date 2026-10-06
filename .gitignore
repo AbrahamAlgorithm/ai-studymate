@@ -1,4 +1,4 @@
-# Logs
+# logs
 logs
 *.log
 npm-debug.log*
@@ -13,24 +13,20 @@ dist-ssr
 .vite
 *.local
 
-# Secrets — never commit these
+# secrets
 .env
 .env.*
 !.env.example
 *service-account*.json
 *-firebase-adminsdk-*.json
 
-# Go
+# go
 backend/server
 backend/tmp/
 *.test
 coverage.out
 
-# Firebase CLI
-.firebase/
-firebase-debug.log
-
-# Editor directories and files
+# editor
 .vscode/*
 !.vscode/extensions.json
 .idea

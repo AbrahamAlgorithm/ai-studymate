@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 const SpeechRecognition =
     typeof window !== 'undefined' ? window.SpeechRecognition || window.webkitSpeechRecognition : null
 
-/** Browser speech-to-text (Chrome, Edge, Safari). `onText` receives each final phrase. */
+// chrome, edge and safari only, firefox doesn't have it
 const useSpeechRecognition = (onText) => {
     const [listening, setListening] = useState(false)
     const recognitionRef = useRef(null)

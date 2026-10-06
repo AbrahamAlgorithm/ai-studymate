@@ -17,8 +17,7 @@ import (
 const maxUploadBytes = 10 << 20 // 10 MB
 
 func (h *Handler) Handout(c *gin.Context) {
-	// Leave room for multipart overhead on top of the file itself.
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxUploadBytes+(1<<20))
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxUploadBytes+(1<<20)) // +1MB for multipart overhead
 
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
@@ -60,8 +59,8 @@ func (h *Handler) Handout(c *gin.Context) {
 	case "pdf":
 		text, pdfErr := extract.PDF(data)
 		if pdfErr != nil {
-			// Scanned PDF — let a model that reads PDFs natively (Gemini) look at it.
-			log.Printf("[handout] no text layer in %q, sending as file: %v", header.Filename, pdfErr)
+			// scanned pdf with no text layer, gemini can read the pdf itself
+			log.Printf("[handout] no text layer in %q, sending the file: %v", header.Filename, pdfErr)
 			req.Messages = []ai.Message{{Role: "user", Content: prompt}}
 			req.Attachment = &ai.Attachment{Data: data, MimeType: "application/pdf"}
 		} else {
@@ -79,20 +78,10 @@ func (h *Handler) Handout(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.AI.Chat(c.Request.Context(), req)
-	if err != nil {
-		respondAIError(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"response": resp.Text,
-		"provider": resp.Provider,
-	})
+	h.answer(c, req)
 }
 
-// detectKind classifies an upload by its content (falling back to the
-// extension for plain text), so a renamed file can't masquerade as another type.
+// go by the actual bytes, not the extension, so a renamed file can't sneak through
 func detectKind(filename string, data []byte) string {
 	mime := http.DetectContentType(data)
 	switch {

@@ -19,7 +19,7 @@ import (
 
 type quizContext struct {
 	Type    string `json:"type"`    // text | url | youtube | document
-	Content string `json:"content"` // text, URL, YouTube URL, or base64 file
+	Content string `json:"content"` // text, a link, or a base64 file
 }
 
 type quizRequest struct {
@@ -30,14 +30,13 @@ type quizRequest struct {
 	Context    *quizContext `json:"context"`
 }
 
-// QuizItem is one normalised question returned to the client.
 type QuizItem struct {
 	ID          int      `json:"id"`
 	Question    string   `json:"question"`
 	Type        string   `json:"type"` // mcq | theory
 	Options     []string `json:"options,omitempty"`
-	AnswerIndex *int     `json:"answerIndex,omitempty"` // mcq only
-	Answer      string   `json:"answer"`                // correct option text, or model answer for theory
+	AnswerIndex *int     `json:"answerIndex,omitempty"`
+	Answer      string   `json:"answer"` // the right option for mcq, the model answer for theory
 	Explanation string   `json:"explanation"`
 }
 
@@ -101,11 +100,7 @@ func (h *Handler) Quiz(c *gin.Context) {
 		title = req.Topic
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"title":    title,
-		"quiz":     quiz,
-		"provider": aiResp.Provider,
-	})
+	c.JSON(http.StatusOK, gin.H{"title": title, "quiz": quiz, "model": aiResp.Model})
 }
 
 func clamp(v, lo, hi, fallback int) int {
@@ -126,33 +121,32 @@ func (h *Handler) resolveQuizContext(c *gin.Context, qc *quizContext) (string, e
 		return truncateRunes(content, extract.MaxDocumentChars), nil
 
 	case "url":
-		// A YouTube link given as a plain URL is still a video.
 		if _, err := youtube.ExtractVideoID(content); err == nil {
 			return h.resolveQuizContext(c, &quizContext{Type: "youtube", Content: content})
 		}
 		page, err := extract.URL(c.Request.Context(), content)
 		if err != nil {
 			log.Printf("[quiz] url context: %v", err)
-			return "", errors.New("couldn't read that web page — check the link or paste the text instead")
+			return "", errors.New("Couldn't read that web page. Check the link or paste the text instead.")
 		}
 		return fmt.Sprintf("Source: %s\n\n%s", page.Title, page.Content), nil
 
 	case "youtube":
 		videoID, err := youtube.ExtractVideoID(content)
 		if err != nil {
-			return "", errors.New("that doesn't look like a YouTube video link")
+			return "", errors.New("That doesn't look like a YouTube video link.")
 		}
-		segs, err := youtube.FetchTranscript(c.Request.Context(), videoID)
-		if err != nil {
+		_, segs, err := youtube.FetchVideo(c.Request.Context(), videoID)
+		if len(segs) == 0 {
 			log.Printf("[quiz] youtube context: %v", err)
-			return "", errors.New("this video has no captions I can read, so I can't build a quiz from it — try a topic instead")
+			return "", errors.New("I can't read the captions on this video, so I can't build a quiz from it. Try a topic instead.")
 		}
 		return "YouTube video transcript:\n" + truncateRunes(youtube.TranscriptText(segs), maxTranscriptChar), nil
 
 	case "document":
 		data, err := base64.StdEncoding.DecodeString(content)
 		if err != nil {
-			return "", errors.New("document must be base64-encoded")
+			return "", errors.New("The document has to be base64 encoded.")
 		}
 		if text, err := extract.PDF(data); err == nil {
 			return text, nil
@@ -160,7 +154,7 @@ func (h *Handler) resolveQuizContext(c *gin.Context, qc *quizContext) (string, e
 		if utf8.Valid(data) {
 			return truncateRunes(string(data), extract.MaxDocumentChars), nil
 		}
-		return "", errors.New("couldn't read text from that document — upload it in Handout mode instead")
+		return "", errors.New("Couldn't read any text from that document. Upload it in Handout mode instead.")
 	}
 
 	return "", fmt.Errorf("unknown context type %q", qc.Type)
@@ -203,8 +197,7 @@ type rawQuizItem struct {
 	Explanation string   `json:"explanation"`
 }
 
-// parseQuiz tolerates code fences, leading prose, and both {"questions":[...]}
-// and the older {"quiz":[...]} shape, then normalises every item.
+// models don't always follow the format, so be forgiving about fences, extra text and field names
 func parseQuiz(raw string) (string, []QuizItem, error) {
 	if m := jsonFenceRegex.FindStringSubmatch(raw); m != nil {
 		raw = m[1]
@@ -275,13 +268,13 @@ func valueOr(v, fallback any) any {
 	if v == nil {
 		return fallback
 	}
-	if f, ok := v.(float64); ok { // JSON numbers, e.g. "answer": 2
+	if f, ok := v.(float64); ok {
 		return fmt.Sprintf("%d", int(f))
 	}
 	return v
 }
 
-// answerIndex resolves "B", "b)", "B) text", a 0/1-based number, or the option text itself.
+// handles "B", "b)", "B) text", 1-based numbers, or the option text itself
 func answerIndex(answer string, rawOpts, cleanOpts []string) int {
 	if answer == "" {
 		return -1

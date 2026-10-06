@@ -28,7 +28,7 @@ const QUIZ_FROM_SOURCE = "Quiz me on this source";
 const newId = () =>
     (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 
-// Responses saved before the backend existed were stored as crude HTML.
+// old history from before the backend was saved as html
 const legacyToMarkdown = (text) => {
     if (!text || !/<br\s*\/?>|<\/?b>/i.test(text)) return text || "";
     return text
@@ -60,7 +60,7 @@ const fromDoc = (snap) => {
 
 const LETTERS = ["A", "B", "C", "D", "E", "F"];
 
-// Spells a quiz out so the tutor can discuss specific questions afterwards.
+// spell the quiz out so follow up questions about it make sense to the model
 const quizAsText = (ex) => {
     const lines = [`Quiz: ${ex.quizTitle || ex.prompt}`];
     for (const q of ex.quiz) {
@@ -77,7 +77,6 @@ const quizAsText = (ex) => {
     return lines.join("\n");
 };
 
-// Turns completed exchanges into model conversation history.
 const toApiHistory = (exchanges) =>
     exchanges
         .filter((ex) => ex.status === "done" && !ex.error)
@@ -162,10 +161,9 @@ const ContextProvider = (props) => {
                 if (cancelled) return;
                 const loaded = snapshot.docs.map(fromDoc);
                 const loadedIds = new Set(loaded.map((ex) => ex.id));
-                // Keep anything asked while history was still loading.
+                // don't drop anything they asked while this was loading
                 setHistory((prev) => [...loaded, ...prev.filter((ex) => !loadedIds.has(ex.id))]);
             } catch (error) {
-                // Leave in-memory history alone; studying works without saved sessions.
                 console.error("Could not load study history", error);
             } finally {
                 if (!cancelled) setHistoryLoaded(true);
@@ -176,7 +174,6 @@ const ContextProvider = (props) => {
         return () => { cancelled = true; };
     }, [uid, resetWorkspace]);
 
-    // Sessions, most recently active first.
     const sessions = useMemo(() => {
         const byId = new Map();
         for (const ex of history) {
@@ -203,9 +200,7 @@ const ContextProvider = (props) => {
     const patchExchange = (id, patch) =>
         setHistory((prev) => prev.map((ex) => (ex.id === id ? { ...ex, ...patch } : ex)));
 
-    // Firestore write promises only settle once the server acknowledges them
-    // (never, while offline), so history writes are fire-and-forget: the SDK
-    // queues them in order and the UI never waits on the network to save.
+    // firestore writes only resolve when the server acks them, so i don't await them or the ui hangs offline
     const exchangeRef = (id) => doc(db, "users", currentUser.uid, "history", id);
 
     const saveExchange = (id, fields, { create = false } = {}) => {
@@ -223,12 +218,13 @@ const ContextProvider = (props) => {
         return video;
     };
 
-    // Runs the request for the active mode and returns the fields to store.
-    const runMode = async ({ mode, text, file, priorThread, signal }) => {
+    // update patches the exchange while the answer is still coming in
+    const runMode = async ({ mode, text, file, priorThread, signal, update }) => {
         const apiHistory = toApiHistory(priorThread);
+        const onText = (sofar) => update({ response: sofar, status: "streaming" });
 
         if (mode === "handout" && file) {
-            const data = await api.analyzeHandout({ file, question: text }, { signal });
+            const data = await api.analyzeHandout({ file, question: text }, { signal, onText });
             return { response: data.response };
         }
 
@@ -244,7 +240,7 @@ const ContextProvider = (props) => {
                 question = text.replace(link, "").trim() || DEFAULT_PROMPTS.youtube;
                 fresh = true;
             } else if (video && !video.transcript && video.videoId) {
-                // Reopened from history: transcripts aren't stored, so fetch again.
+                // transcripts aren't saved, so a reopened session has to fetch it again
                 video = await loadVideo(`https://www.youtube.com/watch?v=${video.videoId}`, signal);
             }
 
@@ -252,23 +248,23 @@ const ContextProvider = (props) => {
                 throw new api.ApiError("Paste a YouTube link first, then ask your question about the video.", 400);
             }
 
+            const card = {
+                videoId: video.videoId,
+                title: video.title || "",
+                channel: video.channel || "",
+                thumbnail: video.thumbnail || "",
+                transcriptAvailable: Boolean(video.transcriptAvailable),
+            };
+            update({ video: card }); // show the video while the answer is still coming
+
             const data = await api.youtubeAsk(
                 { video, question, history: fresh ? [] : apiHistory },
-                { signal }
+                { signal, onText }
             );
-            return {
-                response: data.response,
-                video: {
-                    videoId: video.videoId,
-                    title: video.title || "",
-                    channel: video.channel || "",
-                    thumbnail: video.thumbnail || "",
-                    transcriptAvailable: Boolean(video.transcriptAvailable),
-                },
-            };
+            return { response: data.response, video: card };
         }
 
-        // In a quiz session, later messages are questions about the quiz, not new quizzes.
+        // once there's a quiz in the session, new messages are questions about it, not new quizzes
         const quizFollowUp = mode === "quiz" && priorThread.some((ex) => ex.quiz && !ex.error);
 
         if (mode === "quiz" && !quizFollowUp) {
@@ -278,12 +274,11 @@ const ContextProvider = (props) => {
 
         const data = await api.chat(
             { message: text, history: apiHistory, mode: quizFollowUp ? "ask" : mode },
-            { signal }
+            { signal, onText }
         );
         return { response: data.response };
     };
 
-    /** Send the current input (or `text`) in the active mode. Optional `file` for handouts. */
     const onSent = async (text, { file } = {}) => {
         const mode = activeMode;
         let prompt = (text ?? input).trim();
@@ -293,7 +288,7 @@ const ContextProvider = (props) => {
 
         const sessionId = activeSessionId || newId();
         const priorThread = history.filter((ex) => ex.sessionId === sessionId);
-        // Client-generated Firestore id, so the exchange keeps one id throughout.
+        // make the doc id up front so the exchange keeps the same id the whole time
         const exchangeId = currentUser?.uid
             ? doc(collection(db, "users", currentUser.uid, "history")).id
             : newId();
@@ -316,14 +311,26 @@ const ContextProvider = (props) => {
         abortRef.current = controller;
         saveExchange(exchangeId, { ...base, response: "" }, { create: true });
 
+        let partial = "";
+        const update = (patch) => {
+            if ("response" in patch) partial = patch.response;
+            patchExchange(exchangeId, patch);
+        };
+
         try {
-            const result = await runMode({ mode, text: prompt, file, priorThread, signal: controller.signal });
-            patchExchange(exchangeId, { ...result, status: "done", justArrived: true });
+            const result = await runMode({ mode, text: prompt, file, priorThread, signal: controller.signal, update });
+            patchExchange(exchangeId, { ...result, status: "done" });
             saveExchange(exchangeId, result);
         } catch (error) {
             if (error.name === "AbortError") {
-                setHistory((prev) => prev.filter((ex) => ex.id !== exchangeId));
-                if (currentUser?.uid) deleteDoc(exchangeRef(exchangeId)).catch(() => {});
+                // stopped halfway, keep what they already got
+                if (partial) {
+                    patchExchange(exchangeId, { response: partial, status: "done" });
+                    saveExchange(exchangeId, { response: partial });
+                } else {
+                    setHistory((prev) => prev.filter((ex) => ex.id !== exchangeId));
+                    if (currentUser?.uid) deleteDoc(exchangeRef(exchangeId)).catch(() => {});
+                }
                 return;
             }
             const message = error.message || "Something went wrong while generating your response. Please try again.";
@@ -336,8 +343,6 @@ const ContextProvider = (props) => {
     };
 
     const stopGenerating = () => abortRef.current?.abort();
-
-    const markRevealed = (id) => patchExchange(id, { justArrived: false });
 
     const recordQuizScore = (exchangeId, score, total) => {
         patchExchange(exchangeId, { quizScore: { score, total } });
@@ -367,7 +372,7 @@ const ContextProvider = (props) => {
     const changeMode = (mode) => {
         if (mode === activeMode) return;
         setActiveMode(mode);
-        // A different mode starts a fresh session so context doesn't bleed across tools.
+        // new mode, new session, so the context doesn't mix
         if (activeSessionId) newChat();
     };
 
@@ -393,7 +398,6 @@ const ContextProvider = (props) => {
         setQuizOptions,
         onSent,
         stopGenerating,
-        markRevealed,
         recordQuizScore,
         loading,
         input,

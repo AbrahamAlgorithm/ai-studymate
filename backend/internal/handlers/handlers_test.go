@@ -7,26 +7,45 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"google.golang.org/genai"
 	"studymate/backend/internal/ai"
 )
 
-// fakeAI records the last request and returns a canned reply.
 type fakeAI struct {
-	reply string
-	err   error
-	last  ai.ChatRequest
+	reply   string
+	err     error
+	restart bool
+	last    ai.ChatRequest
 }
 
-func (f *fakeAI) Chat(_ context.Context, req ai.ChatRequest) (*ai.ChatResponse, error) {
+func (f *fakeAI) Chat(ctx context.Context, req ai.ChatRequest) (*ai.ChatResponse, error) {
+	return f.Stream(ctx, req, nil)
+}
+
+// sends the reply in two halves so the streaming path gets exercised
+func (f *fakeAI) Stream(_ context.Context, req ai.ChatRequest, sink *ai.Sink) (*ai.ChatResponse, error) {
 	f.last = req
 	if f.err != nil {
 		return nil, f.err
 	}
-	return &ai.ChatResponse{Text: f.reply, Provider: "fake"}, nil
+	if sink != nil {
+		if f.restart {
+			_ = sink.Text("this model died hal")
+			_ = sink.Reset()
+		}
+		half := len(f.reply) / 2
+		for _, part := range []string{f.reply[:half], f.reply[half:]} {
+			if err := sink.Text(part); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return &ai.ChatResponse{Text: f.reply, Model: "fake"}, nil
 }
 
 func newTestRouter(h *Handler) *gin.Engine {
@@ -53,7 +72,7 @@ func postJSON(t *testing.T, r http.Handler, path string, body any) (*httptest.Re
 
 func TestChatSendsHistoryAndModePrompt(t *testing.T) {
 	f := &fakeAI{reply: "Force equals mass times acceleration."}
-	r := newTestRouter(New(f, ""))
+	r := newTestRouter(New(f))
 
 	w, out := postJSON(t, r, "/chat", map[string]any{
 		"message": "Explain Newton's second law",
@@ -82,7 +101,7 @@ func TestChatSendsHistoryAndModePrompt(t *testing.T) {
 }
 
 func TestChatRejectsEmptyMessage(t *testing.T) {
-	r := newTestRouter(New(&fakeAI{}, ""))
+	r := newTestRouter(New(&fakeAI{}))
 	w, _ := postJSON(t, r, "/chat", map[string]any{"message": "   "})
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400", w.Code)
@@ -94,12 +113,13 @@ func TestAIErrorsAreMappedWithoutLeakingDetails(t *testing.T) {
 		err  error
 		want int
 	}{
-		{ai.ErrNoProvider, http.StatusServiceUnavailable},
+		{ai.ErrNotConfigured, http.StatusServiceUnavailable},
+		{genai.APIError{Code: 503, Status: "UNAVAILABLE"}, http.StatusServiceUnavailable},
 		{context.DeadlineExceeded, http.StatusGatewayTimeout},
 		{errSecret("upstream said: key AIza-secret invalid"), http.StatusBadGateway},
 	}
 	for _, tc := range cases {
-		r := newTestRouter(New(&fakeAI{err: tc.err}, ""))
+		r := newTestRouter(New(&fakeAI{err: tc.err}))
 		w, out := postJSON(t, r, "/chat", map[string]any{"message": "hi"})
 		if w.Code != tc.want {
 			t.Errorf("%v: status = %d, want %d", tc.err, w.Code, tc.want)
@@ -120,7 +140,7 @@ func TestQuizNormalisesModelOutput(t *testing.T) {
 		{"question":"Define entropy.","type":"theory","answer":"A measure of disorder.","explanation":""},
 		{"question":"Broken","type":"mcq","options":["a","b"],"answer":"Z"}
 	]}` + "\n```"}
-	r := newTestRouter(New(f, ""))
+	r := newTestRouter(New(f))
 
 	w, out := postJSON(t, r, "/quiz", map[string]any{"topic": "thermodynamics", "count": 99, "difficulty": "silly"})
 	if w.Code != http.StatusOK {
@@ -151,7 +171,7 @@ func TestQuizNormalisesModelOutput(t *testing.T) {
 }
 
 func TestQuizMalformedOutput(t *testing.T) {
-	r := newTestRouter(New(&fakeAI{reply: "Sorry, I can't do that."}, ""))
+	r := newTestRouter(New(&fakeAI{reply: "Sorry, I can't do that."}))
 	w, _ := postJSON(t, r, "/quiz", map[string]any{"topic": "x"})
 	if w.Code != http.StatusBadGateway {
 		t.Fatalf("status = %d, want 502", w.Code)
@@ -159,7 +179,7 @@ func TestQuizMalformedOutput(t *testing.T) {
 }
 
 func TestQuizNeedsTopicOrSource(t *testing.T) {
-	r := newTestRouter(New(&fakeAI{}, ""))
+	r := newTestRouter(New(&fakeAI{}))
 	w, _ := postJSON(t, r, "/quiz", map[string]any{})
 	if w.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want 400", w.Code)
@@ -196,7 +216,7 @@ func uploadFile(t *testing.T, r http.Handler, filename string, content []byte, f
 
 func TestHandoutText(t *testing.T) {
 	f := &fakeAI{reply: "Summary"}
-	r := newTestRouter(New(f, ""))
+	r := newTestRouter(New(f))
 
 	w := uploadFile(t, r, "notes.md", []byte("# Beams\nA beam deflects under load."), map[string]string{"question": "Summarise this"})
 	if w.Code != http.StatusOK {
@@ -212,7 +232,7 @@ func TestHandoutText(t *testing.T) {
 
 func TestHandoutImageIsSentAsAttachment(t *testing.T) {
 	f := &fakeAI{reply: "It's a diagram"}
-	r := newTestRouter(New(f, ""))
+	r := newTestRouter(New(f))
 	png := []byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
 
 	w := uploadFile(t, r, "diagram.png", png, nil)
@@ -225,8 +245,8 @@ func TestHandoutImageIsSentAsAttachment(t *testing.T) {
 }
 
 func TestHandoutRejectsUnsupportedType(t *testing.T) {
-	r := newTestRouter(New(&fakeAI{}, ""))
-	// A renamed binary must not be accepted as text.
+	r := newTestRouter(New(&fakeAI{}))
+	// binary junk renamed to .txt
 	w := uploadFile(t, r, "notes.txt", []byte{0x00, 0xff, 0xfe, 0x01, 0x02}, nil)
 	if w.Code != http.StatusUnsupportedMediaType {
 		t.Fatalf("status = %d, want 415", w.Code)
@@ -235,7 +255,7 @@ func TestHandoutRejectsUnsupportedType(t *testing.T) {
 
 func TestYoutubeAskFocusesOnTimestamp(t *testing.T) {
 	f := &fakeAI{reply: "At 2:00 they derive the formula."}
-	r := newTestRouter(New(f, ""))
+	r := newTestRouter(New(f))
 
 	w, _ := postJSON(t, r, "/youtube/ask", map[string]any{
 		"videoId":  "dQw4w9WgXcQ",
@@ -258,7 +278,7 @@ func TestYoutubeAskFocusesOnTimestamp(t *testing.T) {
 
 func TestYoutubeAskWithoutTranscriptIsHonest(t *testing.T) {
 	f := &fakeAI{reply: "ok"}
-	r := newTestRouter(New(f, ""))
+	r := newTestRouter(New(f))
 	w, _ := postJSON(t, r, "/youtube/ask", map[string]any{
 		"videoId": "dQw4w9WgXcQ", "title": "Some lecture", "question": "Summarise it",
 	})
@@ -272,9 +292,9 @@ func TestYoutubeAskWithoutTranscriptIsHonest(t *testing.T) {
 
 func TestChatLinkedPageIsGuarded(t *testing.T) {
 	f := &fakeAI{reply: "ok"}
-	r := newTestRouter(New(f, ""))
+	r := newTestRouter(New(f))
 
-	// Internal addresses must never be fetched; the model is told the page was unreadable.
+	// internal address, must not be fetched
 	w, _ := postJSON(t, r, "/chat", map[string]any{"message": "Summarise http://127.0.0.1/admin."})
 	if w.Code != http.StatusOK {
 		t.Fatalf("status = %d", w.Code)
@@ -284,9 +304,81 @@ func TestChatLinkedPageIsGuarded(t *testing.T) {
 		t.Errorf("expected unreadable-page note with trimmed link, got %q", turn)
 	}
 
-	// YouTube links are left for YouTube mode, not scraped as web pages.
 	_, _ = postJSON(t, r, "/chat", map[string]any{"message": "what is https://youtu.be/dQw4w9WgXcQ about?"})
 	if turn := f.last.Messages[0].Content; strings.Contains(turn, "LINKED PAGE") || strings.Contains(turn, "could not be read") {
 		t.Errorf("youtube link should not be fetched: %q", turn)
+	}
+}
+
+// real gemini through the handlers, run with: go test ./internal/handlers -run Live -v (needs GEMINI_API_KEY)
+func TestLiveChatAndQuiz(t *testing.T) {
+	key := os.Getenv("GEMINI_API_KEY")
+	if key == "" {
+		t.Skip("GEMINI_API_KEY not set")
+	}
+	g, err := ai.NewGemini(context.Background(), ai.Config{APIKey: key, Model: os.Getenv("GEMINI_MODEL"), Fallbacks: ai.DefaultFallbacks})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := newTestRouter(New(g))
+
+	w, out := postJSON(t, r, "/chat", map[string]any{"message": "In one sentence, what is Newton's second law?", "mode": "ask"})
+	if w.Code != http.StatusOK {
+		t.Fatalf("chat: %d %s", w.Code, w.Body)
+	}
+	t.Logf("chat via %v: %v", out["model"], out["response"])
+
+	w, out = postJSON(t, r, "/quiz", map[string]any{"topic": "photosynthesis", "count": 3, "difficulty": "easy"})
+	if w.Code != http.StatusOK {
+		t.Fatalf("quiz: %d %s", w.Code, w.Body)
+	}
+	quiz := out["quiz"].([]any)
+	if len(quiz) == 0 {
+		t.Fatal("empty quiz")
+	}
+	first := quiz[0].(map[string]any)
+	t.Logf("quiz via %v: %q, %d questions, q1: %v", out["model"], out["title"], len(quiz), first["question"])
+}
+
+func TestChatStreamsWhenAsked(t *testing.T) {
+	r := newTestRouter(New(&fakeAI{reply: "Force is mass times acceleration."}))
+	req := httptest.NewRequest(http.MethodPost, "/chat", strings.NewReader(`{"message":"hi"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	body := w.Body.String()
+	if w.Code != http.StatusOK || !strings.HasPrefix(w.Header().Get("Content-Type"), "text/event-stream") {
+		t.Fatalf("status = %d, content type = %q", w.Code, w.Header().Get("Content-Type"))
+	}
+	if strings.Count(body, "event: chunk") != 2 || !strings.Contains(body, `event: done`+"\n"+`data: {"model":"fake"}`) {
+		t.Errorf("unexpected stream:\n%s", body)
+	}
+}
+
+func TestStreamFailureBeforeFirstWordIsStillJSON(t *testing.T) {
+	r := newTestRouter(New(&fakeAI{err: genai.APIError{Code: 503, Status: "UNAVAILABLE"}}))
+	req := httptest.NewRequest(http.MethodPost, "/chat", strings.NewReader(`{"message":"hi"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusServiceUnavailable || !strings.Contains(w.Body.String(), `"error"`) {
+		t.Fatalf("status = %d, body = %s", w.Code, w.Body)
+	}
+}
+
+func TestStreamTellsTheClientToResetWhenAModelDiesHalfway(t *testing.T) {
+	r := newTestRouter(New(&fakeAI{reply: "a full answer", restart: true}))
+	req := httptest.NewRequest(http.MethodPost, "/chat", strings.NewReader(`{"message":"hi"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "text/event-stream")
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	body := w.Body.String()
+	reset := strings.Index(body, "event: reset")
+	if reset < 0 || reset > strings.Index(body, "a full") || !strings.Contains(body, "event: done") {
+		t.Fatalf("expected chunk, reset, then the new answer:\n%s", body)
 	}
 }

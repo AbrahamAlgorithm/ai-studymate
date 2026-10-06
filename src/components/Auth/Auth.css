@@ -1,4 +1,3 @@
-/* Common styling for both Signin and Signup */
 .auth-container {
     display: flex;
     justify-content: center;
@@ -63,26 +62,3 @@
     text-decoration: underline;
 }
 
-/* Media Queries for responsive design
-@media (max-width: 768px) {
-    .auth-form {
-        padding: 1.5rem;
-        width: 90%;
-    }
-}
-
-@media (max-width: 480px) {
-    .auth-form {
-        padding: 1rem;
-    }
-
-    .auth-form h2 {
-        font-size: 1.5rem;
-    }
-
-    .auth-form input,
-    .auth-form button {
-        font-size: 0.875rem;
-        padding: 0.5rem;
-    }
-} */

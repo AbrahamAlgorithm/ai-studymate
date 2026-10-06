@@ -4,7 +4,7 @@ import { auth } from '../../../firebase'
 const provider = new GoogleAuthProvider()
 provider.setCustomParameters({ prompt: 'select_account' })
 
-/** Signs in with a Google popup. Resolves to null if the user closed the popup. */
+// returns null if they just close the popup
 export const signInWithGoogle = async () => {
     try {
         return await signInWithPopup(auth, provider)

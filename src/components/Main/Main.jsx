@@ -15,7 +15,6 @@ const MODE_OPTIONS = [
     { id: 'quiz', label: 'Quiz Generator', icon: assets.bulb_icon },
 ]
 
-// Cards that send immediately vs. ones that need a file/link first (prefill only).
 const STARTER_PROMPTS = {
     ask: [
         'Teach me Newton\'s second law like I am 15, then give 3 practical examples.',
@@ -33,7 +32,7 @@ const STARTER_PROMPTS = {
         'What are the 3 most important ideas in this video?',
     ],
     quiz: [
-        'Thermodynamics — first and second laws',
+        'Thermodynamics: first and second laws',
         'SQL joins, from beginner to advanced',
         'Beam deflection and bending moments',
     ],
@@ -81,7 +80,7 @@ const Main = ({ onOpenSidebar }) => {
     const {
         onSent, stopGenerating, loading, setInput, input, themeMode, currentUser,
         thread, activeMode, changeMode, activeVideo, quizOptions, setQuizOptions,
-        newChat, markRevealed, recordQuizScore,
+        newChat, recordQuizScore,
     } = useContext(Context)
 
     const [youtubeUrl, setYoutubeUrl] = useState('')
@@ -99,7 +98,7 @@ const Main = ({ onOpenSidebar }) => {
 
     const showThread = thread.length > 0
 
-    // ── Auto-grow textarea up to 5 rows ────────────────────────────────────
+    // grow the textarea up to 5 rows
     useEffect(() => {
         const ta = textareaRef.current
         if (!ta) return
@@ -109,18 +108,19 @@ const Main = ({ onOpenSidebar }) => {
         ta.style.height = Math.min(ta.scrollHeight, maxHeight) + 'px'
     }, [input])
 
-    // ── Keep the newest message in view ─────────────────────────────────────
     useEffect(() => {
         const el = containerRef.current
         if (el && showThread) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
     }, [thread.length, showThread])
 
-    // ── Proactive iOS body-freeze ─────────────────────────────────────────────
-    // iOS Safari scrolls the <body> when any input is focused, even position:fixed
-    // inputs — and it does so BEFORE the `focus` event fires in JavaScript.
-    // The only reliable fix is to freeze the body on MOUNT so iOS never has
-    // permission to scroll the document at all. All scrolling that matters
-    // (chat results) happens inside .main-container with overflow-y:auto.
+    // follow the answer while it streams, unless they've scrolled up to read
+    const streamedLength = thread[thread.length - 1]?.response?.length || 0
+    useEffect(() => {
+        const el = containerRef.current
+        if (el && el.scrollHeight - el.scrollTop - el.clientHeight < 160) el.scrollTop = el.scrollHeight
+    }, [streamedLength])
+
+    // ios safari scrolls the body when an input gets focus, freezing it on mount is the only thing that stops it
     useEffect(() => {
         if (window.innerWidth > 760) return
         const body = document.body
@@ -136,9 +136,9 @@ const Main = ({ onOpenSidebar }) => {
             body.style.right = ''
             body.style.overflow = ''
         }
-    }, []) // ← once on mount; unmount cleanup restores it
+    }, [])
 
-    // ── Swipe-from-left-edge to open sidebar ──────────────────────────────────
+    // swipe in from the left edge to open the sidebar
     useEffect(() => {
         const el = mainRef.current
         if (!el) return
@@ -154,7 +154,7 @@ const Main = ({ onOpenSidebar }) => {
             }
         }
 
-        // Non-passive so we can call preventDefault to cancel iOS back gesture
+        // not passive so preventDefault can stop the ios back gesture
         const onTouchMove = (e) => {
             if (touchStartX.current === null) return
             const touch = e.touches[0]
@@ -231,7 +231,7 @@ const Main = ({ onOpenSidebar }) => {
     const acceptFile = (file) => {
         if (!file) return
         if (file.size > MAX_UPLOAD_BYTES) {
-            setFileError(`"${file.name}" is ${formatBytes(file.size)} — the limit is 10 MB.`)
+            setFileError(`"${file.name}" is ${formatBytes(file.size)}. The limit is 10 MB.`)
             return
         }
         setFileError('')
@@ -255,15 +255,15 @@ const Main = ({ onOpenSidebar }) => {
 
     const inQuizSession = activeMode === 'quiz' && thread.some((ex) => ex.quiz)
     const placeholder = activeMode === 'youtube'
-        ? (activeVideo ? 'Ask about this video — e.g. "what happens at 12:30?"' : 'Paste a YouTube link, optionally followed by your question')
+        ? (activeVideo ? 'Ask about this video, like "what happens at 12:30?"' : 'Paste a YouTube link, optionally followed by your question')
         : inQuizSession
-            ? 'Ask about this quiz — e.g. "explain question 2"'
+            ? 'Ask about this quiz, like "explain question 2"'
             : MODE_PLACEHOLDERS[activeMode]
 
     const canSend = !loading && (input.trim() || attachedFile || (activeMode === 'quiz' && quizOptions.source.trim()))
     const activeModeOption = MODE_OPTIONS.find((m) => m.id === activeMode) || MODE_OPTIONS[0]
     const userInitials = getInitials(currentUser)
-    // Pick a stable background hue from the initials string
+    // same initials always get the same colour
     const avatarHue = ((userInitials.charCodeAt(0) || 0) * 37 + (userInitials.charCodeAt(1) || 0) * 17) % 360
 
     return (
@@ -282,7 +282,6 @@ const Main = ({ onOpenSidebar }) => {
                 accept={ACCEPTED_UPLOADS}
             />
 
-            {/* ── Nav ── */}
             <div className="nav">
                 <div className="nav-left">
                     <button className="hamburger-btn" aria-label="Open menu" onClick={onOpenSidebar}>
@@ -308,7 +307,6 @@ const Main = ({ onOpenSidebar }) => {
                 </div>
             </div>
 
-            {/* ── Scrollable content (SIBLING of .main-bottom, NOT its parent) ── */}
             <div ref={containerRef} className={`main-container${!showThread ? ' dashboard-mode' : ''}`}>
                 {!showThread ? (
                     <>
@@ -433,9 +431,9 @@ const Main = ({ onOpenSidebar }) => {
                                             )}
                                             <p>{ex.prompt}</p>
                                         </div>
-                                        <div className={`chat-bubble ai-bubble${ex.error ? ' error-bubble' : ''}`}>
+                                        <div className={`chat-bubble ai-bubble${ex.error ? ' error-bubble' : ''}${ex.status === 'streaming' ? ' streaming' : ''}`}>
                                             {showVideo && <VideoCard video={ex.video} />}
-                                            {ex.status === 'pending' ? (
+                                            {ex.status === 'pending' || (ex.status === 'streaming' && !ex.response) ? (
                                                 <div className="pending">
                                                     <div className="thinking-dots"><span /><span /><span /></div>
                                                     <span className="pending-label">{PENDING_LABELS[ex.mode] || PENDING_LABELS.ask}</span>
@@ -449,11 +447,7 @@ const Main = ({ onOpenSidebar }) => {
                                                     onNewQuiz={newChat}
                                                 />
                                             ) : ex.response ? (
-                                                <MessageContent
-                                                    text={ex.response}
-                                                    animate={Boolean(ex.justArrived)}
-                                                    onRevealed={() => markRevealed(ex.id)}
-                                                />
+                                                <MessageContent text={ex.response} />
                                             ) : (
                                                 <p className="error-text">No saved response for this question.</p>
                                             )}
@@ -466,13 +460,7 @@ const Main = ({ onOpenSidebar }) => {
                 )}
             </div>
 
-            {/* ── Input bar — SIBLING of .main-container ── */}
-            {/*
-                On desktop: static flex child at the bottom of .main.
-                On mobile:  position:fixed, above the keyboard.
-                Because it is NOT inside .main-container, focusing the textarea
-                cannot scroll .main-container — the greeting stays frozen.
-            */}
+            {/* kept outside .main-container so focusing it on mobile can't scroll the content */}
             <div className="main-bottom">
                 {(attachedFile || fileError) && (
                     <div className="attachment-row">
@@ -526,7 +514,7 @@ const Main = ({ onOpenSidebar }) => {
                         ) : null}
                     </div>
                 </div>
-                <p className="bottom-info">StudyMate can make mistakes — double-check important facts.</p>
+                <p className="bottom-info">StudyMate can make mistakes, so double-check important facts.</p>
             </div>
         </div>
     )

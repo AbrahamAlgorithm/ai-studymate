@@ -12,7 +12,7 @@ const MODE_LABELS = {
 
 const dayKey = (date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
 
-// Consecutive days with activity, counting back from today (or yesterday).
+// counts back from today, or yesterday if they haven't studied yet today
 const studyStreak = (dates) => {
     const days = new Set(dates.filter((d) => d.getTime() > 0).map(dayKey))
     const cursor = new Date()
@@ -54,7 +54,7 @@ const Progress = () => {
                 { label: 'Questions answered', value: answered.length, icon: '✅' },
                 { label: 'Day streak', value: studyStreak(history.map((ex) => ex.createdAt)), icon: '🔥' },
                 { label: 'This week', value: history.filter((ex) => ex.createdAt.getTime() > weekAgo).length, icon: '📈' },
-                { label: 'Quiz average', value: quizAverage === null ? '—' : `${quizAverage}%`, icon: '🎯' },
+                { label: 'Quiz average', value: quizAverage === null ? '-' : `${quizAverage}%`, icon: '🎯' },
             ],
             byMode,
             maxMode: Math.max(1, ...byMode.map((m) => m.count)),

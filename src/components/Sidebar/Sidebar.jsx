@@ -31,7 +31,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth <= 760
     const showExpanded = extended || (isOpen && isMobile)
 
-    // Close picker when clicking outside
+    // close the picker on outside click
     useEffect(() => {
         const handler = (e) => {
             if (themePickerRef.current && !themePickerRef.current.contains(e.target)) {
@@ -152,7 +152,6 @@ const Sidebar = ({ isOpen, onClose }) => {
                         {showExpanded && <p>Learning tips</p>}
                     </div>
 
-                    {/* Theme picker */}
                     <div className="theme-picker-wrap" ref={themePickerRef}>
                         <div
                             className={`bottom-item recent-entry${themePickerOpen ? ' theme-row-active' : ''}`}

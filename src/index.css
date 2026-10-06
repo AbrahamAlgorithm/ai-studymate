@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap');
 
-/* Prevent iOS elastic scroll bounce which causes dashboard "shaking" */
+/* stops the ios bounce that made the dashboard shake */
 html,
 body {
   height: 100%;

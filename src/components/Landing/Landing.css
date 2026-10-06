@@ -115,7 +115,7 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  /* 40px tap target; the negative margin keeps the icon aligned with the gutter */
+  /* 40px tap target, the negative margin keeps the icon lined up */
   width: 2.5rem;
   height: 2.5rem;
   margin-right: -0.25rem;

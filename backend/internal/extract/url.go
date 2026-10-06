@@ -11,20 +11,17 @@ import (
 )
 
 const (
-	maxPageBytes   = 3 << 20 // 3 MB of HTML is plenty for an article
-	maxContentLen  = 12000   // keep AI prompts manageable
-	minFragmentLen = 20      // skip tiny fragments like "Share" or "Menu"
+	maxPageBytes   = 3 << 20
+	maxContentLen  = 12000
+	minFragmentLen = 20 // skips stuff like "Share" and "Menu"
 )
 
-// URLContent holds the extracted readable content from a web page.
 type URLContent struct {
 	Title   string
 	Content string
 }
 
-// URL fetches a web page and returns its title and main readable text,
-// stripping away navigation, footers, scripts, and ads. Only public http(s)
-// destinations are allowed.
+// pulls the readable text out of a page and drops nav, footers, scripts and ads
 func URL(ctx context.Context, rawURL string) (*URLContent, error) {
 	u, err := ValidateURL(rawURL)
 	if err != nil {
@@ -54,12 +51,10 @@ func URL(ctx context.Context, rawURL string) (*URLContent, error) {
 		return nil, fmt.Errorf("parse html: %w", err)
 	}
 
-	// Remove boilerplate elements.
 	doc.Find("script, style, noscript, nav, header, footer, aside, form, .ad, .ads, .advertisement, .sidebar, .menu, .cookie-banner").Remove()
 
 	title := strings.TrimSpace(doc.Find("title").First().Text())
 
-	// Prefer <article> or <main>, fall back to <body>.
 	var contentSel *goquery.Selection
 	if doc.Find("article").Length() > 0 {
 		contentSel = doc.Find("article").First()
@@ -69,7 +64,6 @@ func URL(ctx context.Context, rawURL string) (*URLContent, error) {
 		contentSel = doc.Find("body")
 	}
 
-	// Collect paragraph text.
 	var parts []string
 	contentSel.Find("p, h1, h2, h3, h4, li, pre").Each(func(_ int, s *goquery.Selection) {
 		text := strings.TrimSpace(s.Text())
@@ -80,7 +74,6 @@ func URL(ctx context.Context, rawURL string) (*URLContent, error) {
 
 	content := strings.Join(parts, "\n")
 	if content == "" {
-		// Last resort: all text nodes.
 		content = strings.Join(strings.Fields(contentSel.Text()), " ")
 	}
 	if content == "" {
@@ -90,7 +83,7 @@ func URL(ctx context.Context, rawURL string) (*URLContent, error) {
 	return &URLContent{Title: title, Content: Truncate(content, maxContentLen)}, nil
 }
 
-// Truncate shortens s to at most n bytes without splitting a UTF-8 character.
+// cuts at n bytes without splitting a utf-8 character
 func Truncate(s string, n int) string {
 	if len(s) <= n {
 		return s

@@ -15,12 +15,11 @@ const (
 	CtxEmail = "email"
 )
 
-// TokenVerifier verifies Firebase ID tokens (satisfied by *auth.Client).
+// *auth.Client in prod, an interface so the tests can fake it
 type TokenVerifier interface {
 	VerifyIDToken(ctx context.Context, idToken string) (*firebaseauth.Token, error)
 }
 
-// Auth returns a Gin middleware that verifies Firebase ID tokens.
 func Auth(verifier TokenVerifier) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
