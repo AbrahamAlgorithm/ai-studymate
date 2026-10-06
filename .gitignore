@@ -10,7 +10,25 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.vite
 *.local
+
+# Secrets — never commit these
+.env
+.env.*
+!.env.example
+*service-account*.json
+*-firebase-adminsdk-*.json
+
+# Go
+backend/server
+backend/tmp/
+*.test
+coverage.out
+
+# Firebase CLI
+.firebase/
+firebase-debug.log
 
 # Editor directories and files
 .vscode/*

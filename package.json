@@ -5,28 +5,28 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "cd backend && go run ./cmd/server",
     "build": "vite build",
-    "start": "serve -s dist -l ${PORT:-8080}",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:api": "cd backend && go test ./..."
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
-    "@fontsource/inter": "^5.1.1",
-    "@google/generative-ai": "^0.17.1",
     "@mui/icons-material": "^6.5.0",
     "@mui/lab": "^6.0.0-beta.24",
     "@mui/material": "^6.0.0",
     "firebase": "^10.13.0",
     "framer-motion": "^12.0.5",
+    "katex": "^0.19.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-error-boundary": "^5.0.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^6.26.1",
-    "react-type-animation": "^3.2.0",
-    "remixicon": "^4.6.0",
-    "serve": "^14.2.4"
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

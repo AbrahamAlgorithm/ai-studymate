@@ -115,8 +115,10 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  width: 2rem;
-  height: 2rem;
+  /* 40px tap target; the negative margin keeps the icon aligned with the gutter */
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-right: -0.25rem;
   gap: 0.35rem;
   border: none;
   background: transparent;
@@ -281,6 +283,12 @@
   border: 1px solid rgba(250, 250, 250, 0.14);
   background: #101010;
   box-shadow: 0 20px 36px rgba(0, 0, 0, 0.42);
+}
+
+.hero-showcase-frame picture {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .hero-showcase-image {

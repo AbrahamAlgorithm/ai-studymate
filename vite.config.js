@@ -4,7 +4,26 @@ import react from '@vitejs/plugin-react'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        // Vendor chunks change rarely, so browsers keep them cached across deploys.
+        manualChunks: {
+          react: ['react', 'react-dom', 'react-router-dom'],
+          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+          motion: ['framer-motion'],
+        },
+      },
+    },
+  },
   server: {
-    allowedHosts: ['699a-2605-59c0-e2b-4f08-d464-c306-155f-3449.ngrok-free.app']
-  }
+    // In development the Go API runs separately (npm run dev:api); proxying
+    // keeps requests same-origin so no CORS setup is needed.
+    proxy: {
+      '/api': {
+        target: process.env.API_PROXY_TARGET || 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
+  },
 })

@@ -98,7 +98,10 @@ const Landing = () => {
         <section className="hero-showcase-wrap">
           <div className="hero-showcase-bg">
             <div className="hero-showcase-frame">
-              <img src="/home.png" alt="StudyMate product preview" className="hero-showcase-image" />
+              <picture>
+                <source media="(max-width: 768px)" srcSet="/home-mobile.png" />
+                <img src="/home.png" alt="StudyMate explaining Newton's second law with a worked example" className="hero-showcase-image" />
+              </picture>
             </div>
           </div>
         </section>

@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { db } from '../../firebase'
 import '../Landing/Landing.css'
 import './Contact.css'
 
@@ -33,10 +35,14 @@ const Contact = () => {
     setIsSubmitting(true)
 
     try {
-      // TODO: Connect to your backend or email service
-      // For now, just simulate submission
-      await new Promise((resolve) => setTimeout(resolve, 800))
-      
+      await addDoc(collection(db, 'contact_messages'), {
+        firstName: formData.firstName.trim().slice(0, 100),
+        lastName: formData.lastName.trim().slice(0, 100),
+        email: formData.email.trim().slice(0, 200),
+        message: formData.message.trim().slice(0, 5000),
+        createdAt: serverTimestamp(),
+      })
+
       setSubmitStatus('success')
       setFormData({
         firstName: '',
@@ -46,7 +52,8 @@ const Contact = () => {
       })
 
       setTimeout(() => setSubmitStatus(null), 3000)
-    } catch (_error) {
+    } catch (error) {
+      console.error('Could not send contact message', error)
       setSubmitStatus('error')
       setTimeout(() => setSubmitStatus(null), 3000)
     } finally {

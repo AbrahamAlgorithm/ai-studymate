@@ -1,15 +1,17 @@
-import { useContext, useState } from 'react'
+import { Suspense, lazy, useContext, useState } from 'react'
 import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom'
-import Sidebar from './components/Sidebar/Sidebar'
-import Main from './components/Main/Main'
-import Signin from './components/Auth/Signin'
-import Signup from './components/Auth/Signup'
 import Landing from './components/Landing/Landing'
-import Contact from './components/Contact/Contact'
-import LearningTips from './components/LearningTips/LearningTips'
-import Progress from './components/Progress/Progress'
 import { Context } from './context/Context'
 import './App.css'
+
+// Route-level code splitting: the landing page doesn't download MUI, KaTeX or the chat UI.
+const Sidebar = lazy(() => import('./components/Sidebar/Sidebar'))
+const Main = lazy(() => import('./components/Main/Main'))
+const Signin = lazy(() => import('./components/Auth/Signin'))
+const Signup = lazy(() => import('./components/Auth/Signup'))
+const Contact = lazy(() => import('./components/Contact/Contact'))
+const LearningTips = lazy(() => import('./components/LearningTips/LearningTips'))
+const Progress = lazy(() => import('./components/Progress/Progress'))
 
 const Home = () => {
   const { themeMode } = useContext(Context)
@@ -17,7 +19,8 @@ const Home = () => {
   // Persist sidebar preference across refreshes and re-logins
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     const saved = localStorage.getItem('sm_sidebar_open')
-    return saved !== null ? saved === 'true' : true // default: open
+    if (saved !== null) return saved === 'true'
+    return window.innerWidth > 760 // default: open on desktop, closed on phones
   })
 
   const toggleSidebar = () => {
@@ -68,6 +71,7 @@ const App = () => {
   return (
     <div className="app">
       <Router>
+        <Suspense fallback={<div className="auth-loading">Loading...</div>}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/contact" element={<Contact />} />
@@ -77,6 +81,7 @@ const App = () => {
           <Route path="/learning-tips" element={<ProtectedRoute><LearningTips /></ProtectedRoute>} />
           <Route path="/progress" element={<ProtectedRoute><Progress /></ProtectedRoute>} />
         </Routes>
+        </Suspense>
       </Router>
     </div>
   )

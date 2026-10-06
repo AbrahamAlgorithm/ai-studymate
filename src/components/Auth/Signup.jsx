@@ -17,6 +17,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../firebase';
 import { motion } from 'framer-motion';
 import { authTheme } from './shared/theme';
+import { getGoogleError, signInWithGoogle } from './shared/google';
 import LoadingButton from '@mui/lab/LoadingButton';
 import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded';
 import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
@@ -96,6 +97,20 @@ const isEmailValid = (email) => /^\S+@\S+\.\S+$/.test(email);
 
 const Signup = () => {
     const navigate = useNavigate();
+    const [googleLoading, setGoogleLoading] = useState(false);
+
+    const handleGoogle = async () => {
+        setError('');
+        setGoogleLoading(true);
+        try {
+            const result = await signInWithGoogle();
+            if (result) navigate('/chat');
+        } catch (error) {
+            setError(getGoogleError(error.code));
+        } finally {
+            setGoogleLoading(false);
+        }
+    };
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -138,7 +153,7 @@ const Signup = () => {
         try {
             await createUserWithEmailAndPassword(auth, cleanEmail, password);
             setOpenSnackbar(true);
-            setTimeout(() => navigate('/signin'), 800);
+            setTimeout(() => navigate('/chat'), 800);
         } catch (error) {
             setError(getSignupError(error.code));
         } finally {
@@ -264,14 +279,14 @@ const Signup = () => {
                         <Divider sx={{ flex: 1, borderColor: 'rgba(250,250,250,0.2)' }} />
                     </Box>
 
-                    <Button variant="outlined" sx={styles.socialButton}>
+                    <Button variant="outlined" sx={styles.socialButton} onClick={handleGoogle} disabled={googleLoading}>
                         <Box
                             component="img"
                             src="https://res.cloudinary.com/subframe/image/upload/v1711417516/shared/z0i3zyjjqkobzuaecgno.svg"
                             alt="Google"
                             sx={{ width: 18, height: 18 }}
                         />
-                        Continue with Google
+                        {googleLoading ? 'Opening Google…' : 'Continue with Google'}
                     </Button>
 
                     <Typography sx={styles.secondaryRow}>
@@ -290,7 +305,7 @@ const Signup = () => {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
                 <Alert severity="success" sx={{ width: '100%' }}>
-                    Account created. Redirecting to sign in...
+                    Account created. Taking you to your dashboard…
                 </Alert>
             </Snackbar>
         </ThemeProvider>
