@@ -94,10 +94,12 @@ jobs:
           gcloud config set project "$GCP_PROJECT"
 
       # the gemini key lives on the cloud run service itself, redeploys keep it
+      # the service was first built without a dockerfile, gcloud won't build from ours until that old base image is cleared
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy "$SERVICE" \
             --source . \
+            --clear-base-image \
             --project "$GCP_PROJECT" \
             --region "$GCP_REGION" \
             --platform managed \

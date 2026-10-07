@@ -168,19 +168,19 @@ REGION=us-central1
 SERVICE=studymate-nau
 NUMBER=$(gcloud projects describe $PROJECT --format='value(projectNumber)')
 
-printf '%s' "$GEMINI_API_KEY" | gcloud secrets create gemini-api-key --data-file=- --project $PROJECT
-gcloud secrets add-iam-policy-binding gemini-api-key --project $PROJECT \
+printf '%s' "$GEMINI_API_KEY" | gcloud secrets create studymate-gemini-api-key --data-file=- --project $PROJECT
+gcloud secrets add-iam-policy-binding studymate-gemini-api-key --project $PROJECT \
   --member "serviceAccount:$NUMBER-compute@developer.gserviceaccount.com" \
   --role roles/secretmanager.secretAccessor
 gcloud run services update $SERVICE --region $REGION --project $PROJECT \
-  --update-secrets GEMINI_API_KEY=gemini-api-key:latest
+  --update-secrets GEMINI_API_KEY=studymate-gemini-api-key:latest
 ```
 
 Set `FIREBASE_PROJECT_ID` and `FIREBASE_WEB_API_KEY` on the service the same way with `--update-env-vars`. Later deploys keep all three.
 
 A few notes on the setup:
 
-- StudyMate shares its Google Cloud project with other apps, so it keeps to the `studymate_users` and `studymate_contact` collections, and `firestore.rules` denies everything else.
+- StudyMate shares its Google Cloud project with other apps, so it keeps to the `studymate_users` and `studymate_contact` collections, `firestore.rules` denies everything else, and its secret is named `studymate-gemini-api-key` so it can't clash with another app's.
 - Adding a custom domain? Add it to Firebase Auth's authorized domains and to the web key's allowed referrers.
 - It runs inside the free tiers: Cloud Run scales to zero, Firestore gives 50,000 reads and 20,000 writes a day, and Auth covers 50,000 monthly users. Billing is on for Cloud Run, so a budget alert is still a good idea.
 
