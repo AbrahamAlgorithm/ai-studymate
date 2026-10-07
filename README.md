@@ -16,7 +16,7 @@
 <br>
 <br>
 
-**[Try it live](https://studymate-nau-taqq76r7ua-uc.a.run.app)** &nbsp;·&nbsp; [Features](#features) &nbsp;·&nbsp; [How it works](#how-it-works) &nbsp;·&nbsp; [Run it locally](#run-it-locally) &nbsp;·&nbsp; [Deploy](#deploy)
+**[Try it live](https://studymate.abrahamalgorithm.tech)** &nbsp;·&nbsp; [Features](#features) &nbsp;·&nbsp; [How it works](#how-it-works) &nbsp;·&nbsp; [Run it locally](#run-it-locally) &nbsp;·&nbsp; [Deploy](#deploy)
 
 </div>
 
