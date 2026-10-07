@@ -83,8 +83,9 @@ type Gemini struct {
 	stream   streamFunc
 
 	mu        sync.Mutex
-	busyTill  map[string]time.Time // overloaded, goes to the back of the line
-	quotaTill map[string]time.Time // out of quota, skipped completely until it resets
+	busyTill  map[string]time.Time           // overloaded, goes to the back of the line
+	quotaTill map[string]time.Time           // out of quota, skipped completely until it resets
+	levelFor  map[string]genai.ThinkingLevel // models that turned our thinking level down, and what they took instead
 
 	slowStart time.Duration // only set by tests
 }
@@ -101,6 +102,7 @@ func NewGemini(ctx context.Context, cfg Config) (*Gemini, error) {
 		thinking:  genai.ThinkingLevel(strings.ToUpper(cfg.Thinking)),
 		busyTill:  map[string]time.Time{},
 		quotaTill: map[string]time.Time{},
+		levelFor:  map[string]genai.ThinkingLevel{},
 	}
 	if cfg.APIKey == "" {
 		return g, nil
@@ -139,7 +141,15 @@ func (g *Gemini) Stream(ctx context.Context, req ChatRequest, sink *Sink) (*Chat
 
 	var lastErr error
 	for i, model := range models {
+		wait := wait
+		if i == len(models)-1 {
+			wait = 0 // nothing to fall back to, so the last model gets as long as the request allows
+		}
 		text, started, err := g.streamFrom(ctx, model, contents, g.config(req, model), sink, wait)
+		// not every model does minimal thinking, step it up and try the same model again
+		for err != nil && !started && rejectsThinkingLevel(err) && g.stepUpThinking(model) {
+			text, started, err = g.streamFrom(ctx, model, contents, g.config(req, model), sink, wait)
+		}
 		if err == nil && strings.TrimSpace(text) == "" {
 			err = errors.New("empty response")
 		}
@@ -185,12 +195,14 @@ func (g *Gemini) streamFrom(ctx context.Context, model string, contents []*genai
 	streamCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	var gotFirst atomic.Bool
-	timer := time.AfterFunc(wait, func() {
-		if !gotFirst.Load() {
-			cancel()
-		}
-	})
-	defer timer.Stop()
+	if wait > 0 {
+		timer := time.AfterFunc(wait, func() {
+			if !gotFirst.Load() {
+				cancel()
+			}
+		})
+		defer timer.Stop()
+	}
 	slow := func(err error) error {
 		if !gotFirst.Load() && streamCtx.Err() != nil && ctx.Err() == nil {
 			return errSlowStart
@@ -267,9 +279,45 @@ func (g *Gemini) config(req ChatRequest, model string) *genai.GenerateContentCon
 		config.MediaResolution = genai.MediaResolutionLow // a third of the tokens and it still reads slides fine
 	}
 	if strings.HasPrefix(model, "gemini-3") {
-		config.ThinkingConfig = &genai.ThinkingConfig{ThinkingLevel: g.thinking}
+		if level := g.thinkingLevel(model); level != "" {
+			config.ThinkingConfig = &genai.ThinkingConfig{ThinkingLevel: level}
+		}
 	}
 	return config
+}
+
+func (g *Gemini) thinkingLevel(model string) genai.ThinkingLevel {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if level, ok := g.levelFor[model]; ok {
+		return level
+	}
+	return g.thinking
+}
+
+// minimal -> low -> leave it to the model. false once there's nothing left to try
+func (g *Gemini) stepUpThinking(model string) bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	current, ok := g.levelFor[model]
+	if !ok {
+		current = g.thinking
+	}
+	switch current {
+	case "":
+		return false
+	case genai.ThinkingLevelMinimal:
+		g.levelFor[model] = genai.ThinkingLevelLow
+	default:
+		g.levelFor[model] = ""
+	}
+	log.Printf("[gemini] %s doesn't take thinking level %s, using %q", model, current, g.levelFor[model])
+	return true
+}
+
+func rejectsThinkingLevel(err error) bool {
+	var apiErr genai.APIError
+	return errors.As(err, &apiErr) && apiErr.Code == 400 && strings.Contains(strings.ToLower(apiErr.Message), "thinking level")
 }
 
 // busy models go to the back of the line for a minute, models out of quota aren't tried at all until google says they reset

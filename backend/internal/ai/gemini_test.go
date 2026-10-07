@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"errors"
+	"fmt"
 	"iter"
 	"os"
 	"strings"
@@ -26,7 +27,7 @@ type fakeModel struct {
 
 func fakeGemini(models []string, behaviour map[string]fakeModel) (*Gemini, *[]string) {
 	var calls []string
-	g := &Gemini{models: models, thinking: genai.ThinkingLevelMinimal, busyTill: map[string]time.Time{}, quotaTill: map[string]time.Time{}}
+	g := &Gemini{models: models, thinking: genai.ThinkingLevelMinimal, busyTill: map[string]time.Time{}, quotaTill: map[string]time.Time{}, levelFor: map[string]genai.ThinkingLevel{}}
 	g.stream = func(_ context.Context, model string, _ []*genai.Content, _ *genai.GenerateContentConfig) iter.Seq2[*genai.GenerateContentResponse, error] {
 		calls = append(calls, model)
 		b, ok := behaviour[model]
@@ -124,6 +125,25 @@ func TestSlowStartMovesToTheNextModel(t *testing.T) {
 	}
 }
 
+func TestLastModelIsNotCutOffEarly(t *testing.T) {
+	g, _ := fakeGemini([]string{"only"}, nil)
+	g.slowStart = 20 * time.Millisecond
+	g.stream = func(ctx context.Context, model string, _ []*genai.Content, _ *genai.GenerateContentConfig) iter.Seq2[*genai.GenerateContentResponse, error] {
+		return func(yield func(*genai.GenerateContentResponse, error) bool) {
+			select {
+			case <-time.After(150 * time.Millisecond): // slower than the cutoff, but it does answer
+				yield(chunk("worth the wait"), nil)
+			case <-ctx.Done():
+				yield(nil, ctx.Err())
+			}
+		}
+	}
+	resp, err := g.Chat(context.Background(), hi)
+	if err != nil || resp.Text != "worth the wait" {
+		t.Fatalf("the only model left should get to finish, resp = %+v, err = %v", resp, err)
+	}
+}
+
 func TestBusyModelGoesToTheBackForAWhile(t *testing.T) {
 	g, calls := fakeGemini([]string{"a", "b"}, map[string]fakeModel{"a": {err: busy}})
 	if _, err := g.Chat(context.Background(), hi); err != nil {
@@ -155,6 +175,35 @@ func TestBusyWhenEveryModelIsOverloaded(t *testing.T) {
 	g, _ := fakeGemini([]string{"a", "b"}, map[string]fakeModel{"a": {err: busy}, "b": {err: busy}})
 	if _, err := g.Chat(context.Background(), hi); !IsBusy(err) {
 		t.Fatalf("IsBusy(%v) = false", err)
+	}
+}
+
+func TestModelThatRejectsMinimalThinkingGetsLow(t *testing.T) {
+	var levels []genai.ThinkingLevel
+	g := &Gemini{models: []string{"gemini-3.7-flash"}, thinking: genai.ThinkingLevelMinimal,
+		busyTill: map[string]time.Time{}, quotaTill: map[string]time.Time{}, levelFor: map[string]genai.ThinkingLevel{}}
+	g.stream = func(_ context.Context, _ string, _ []*genai.Content, cfg *genai.GenerateContentConfig) iter.Seq2[*genai.GenerateContentResponse, error] {
+		var level genai.ThinkingLevel
+		if cfg.ThinkingConfig != nil {
+			level = cfg.ThinkingConfig.ThinkingLevel
+		}
+		levels = append(levels, level)
+		return func(yield func(*genai.GenerateContentResponse, error) bool) {
+			if level == genai.ThinkingLevelMinimal {
+				yield(nil, genai.APIError{Code: 400, Message: "Thinking level MINIMAL is not supported for this model.", Status: "INVALID_ARGUMENT"})
+				return
+			}
+			yield(chunk("ok"), nil)
+		}
+	}
+	for i := 0; i < 2; i++ {
+		if _, err := g.Chat(context.Background(), hi); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got := fmt.Sprint(levels)
+	if got != "[MINIMAL LOW LOW]" {
+		t.Errorf("expected minimal to be retried as low and remembered, got %s", got)
 	}
 }
 

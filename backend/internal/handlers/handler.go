@@ -186,7 +186,8 @@ func truncateRunes(s string, n int) string {
 }
 
 const baseStyle = "Format answers in Markdown: short paragraphs, headings and bullet lists where helpful, " +
-	"and LaTeX for maths ($...$ inline, $$...$$ for display equations). Be accurate; if you are unsure, say so."
+	"and LaTeX for maths ($...$ inline, $$...$$ for display equations). Be accurate; if you are unsure, say so. " +
+	"Skip greetings and self-introductions, start with the answer."
 
 func systemPromptForMode(mode string) string {
 	switch mode {

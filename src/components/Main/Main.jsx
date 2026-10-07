@@ -61,6 +61,12 @@ const getFirstName = (user) => {
     return 'there'
 }
 
+const ClipIcon = () => (
+    <svg className="clip-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+    </svg>
+)
+
 const formatBytes = (n) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(n / 1024)} KB`)
 
 const Main = ({ onOpenSidebar }) => {
@@ -388,7 +394,7 @@ const Main = ({ onOpenSidebar }) => {
                                     <div key={ex.id} className="exchange">
                                         <div className="chat-bubble user-bubble">
                                             {ex.attachment && (
-                                                <span className="attachment-chip in-bubble">📎 {ex.attachment.name}</span>
+                                                <span className="attachment-chip in-bubble"><ClipIcon />{ex.attachment.name}</span>
                                             )}
                                             <p>{ex.prompt}</p>
                                         </div>
@@ -427,7 +433,7 @@ const Main = ({ onOpenSidebar }) => {
                     <div className="attachment-row">
                         {attachedFile && (
                             <span className="attachment-chip">
-                                📎 {attachedFile.name} · {formatBytes(attachedFile.size)}
+                                <ClipIcon />{attachedFile.name} · {formatBytes(attachedFile.size)}
                                 <button type="button" aria-label="Remove file" onClick={() => setAttachedFile(null)}>×</button>
                             </span>
                         )}

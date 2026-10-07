@@ -585,6 +585,11 @@ body,
   white-space: nowrap;
 }
 
+.clip-icon {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
 .attachment-chip button {
   background: none;
   border: none;
@@ -1006,5 +1011,11 @@ body,
 
   .quiz {
     padding: 12px;
+  }
+
+  /* the buttons were squeezing the title into one word per line */
+  .quiz-header {
+    flex-direction: column;
+    gap: 10px;
   }
 }
