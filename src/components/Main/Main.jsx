@@ -8,6 +8,7 @@ import MessageContent from './MessageContent'
 import QuizView from './QuizView'
 import VideoCard from './VideoCard'
 import TopBar from '../Shell/TopBar'
+import Dropdown from '../Dropdown/Dropdown'
 
 const MODE_OPTIONS = [
     { id: 'ask', label: 'Ask & Learn', icon: assets.message_icon },
@@ -44,6 +45,21 @@ const MODE_PLACEHOLDERS = {
     handout: 'Attach a handout, then ask what you want to know',
     quiz: 'What topic should the quiz cover?',
 }
+
+const QUIZ_COUNTS = [5, 10, 15, 20].map((n) => ({ value: n, label: String(n) }))
+
+const QUIZ_DIFFICULTIES = [
+    { value: 'mixed', label: 'Mixed' },
+    { value: 'easy', label: 'Easy' },
+    { value: 'medium', label: 'Medium' },
+    { value: 'hard', label: 'Hard' },
+]
+
+const QUIZ_TYPES = [
+    { value: 'mixed', label: 'Mixed' },
+    { value: 'mcq', label: 'Multiple choice' },
+    { value: 'theory', label: 'Theory' },
+]
 
 const PENDING_LABELS = {
     ask: 'Thinking…',
@@ -322,38 +338,24 @@ const Main = ({ onOpenSidebar }) => {
                             )}
                             {activeMode === 'quiz' && (
                                 <div className="quiz-options-panel">
-                                    <label>
-                                        Questions
-                                        <select
-                                            value={quizOptions.count}
-                                            onChange={(e) => setQuizOptions((o) => ({ ...o, count: Number(e.target.value) }))}
-                                        >
-                                            {[5, 10, 15, 20].map((n) => <option key={n} value={n}>{n}</option>)}
-                                        </select>
-                                    </label>
-                                    <label>
-                                        Difficulty
-                                        <select
-                                            value={quizOptions.difficulty}
-                                            onChange={(e) => setQuizOptions((o) => ({ ...o, difficulty: e.target.value }))}
-                                        >
-                                            <option value="mixed">Mixed</option>
-                                            <option value="easy">Easy</option>
-                                            <option value="medium">Medium</option>
-                                            <option value="hard">Hard</option>
-                                        </select>
-                                    </label>
-                                    <label>
-                                        Type
-                                        <select
-                                            value={quizOptions.type}
-                                            onChange={(e) => setQuizOptions((o) => ({ ...o, type: e.target.value }))}
-                                        >
-                                            <option value="mixed">Mixed</option>
-                                            <option value="mcq">Multiple choice</option>
-                                            <option value="theory">Theory</option>
-                                        </select>
-                                    </label>
+                                    <Dropdown
+                                        label="Questions"
+                                        value={quizOptions.count}
+                                        options={QUIZ_COUNTS}
+                                        onChange={(count) => setQuizOptions((o) => ({ ...o, count }))}
+                                    />
+                                    <Dropdown
+                                        label="Difficulty"
+                                        value={quizOptions.difficulty}
+                                        options={QUIZ_DIFFICULTIES}
+                                        onChange={(difficulty) => setQuizOptions((o) => ({ ...o, difficulty }))}
+                                    />
+                                    <Dropdown
+                                        label="Type"
+                                        value={quizOptions.type}
+                                        options={QUIZ_TYPES}
+                                        onChange={(type) => setQuizOptions((o) => ({ ...o, type }))}
+                                    />
                                     <label className="quiz-source">
                                         Source (optional)
                                         <input

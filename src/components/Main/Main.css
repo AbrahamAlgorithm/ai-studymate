@@ -673,7 +673,6 @@ body,
   color: var(--main-muted);
 }
 
-.quiz-options-panel select,
 .quiz-options-panel input {
   border: 1px solid var(--main-border);
   background: var(--main-bg);
